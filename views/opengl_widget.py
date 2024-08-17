@@ -1,8 +1,11 @@
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
+
+from models.geometry import SceneObject
+
 
 class PicPylesOpenGLWidget(QOpenGLWidget):
     def __init__(self, scene):
@@ -13,10 +16,10 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.translation_x = 0.0
         self.translation_y = 0.0
         self.translation_z = -10.0
-        self.tz_min = -5
-        self.tz_max = -500
-        self.focal_length = 50.0  # Focal length in mm
-        self.sensor_size = (36.0, 24.0)  # Sensor size in mm
+        self.tz_min = -0.1
+        self.tz_max = -100
+        self.focal_length = 1000.0  # Focal length in mm
+        self.sensor_size = (800,600)  # Sensor size in mm
         self.aspect_ratio = self.sensor_size[0] / self.sensor_size[1]
 
         # Set up a timer to trigger regular redraws
@@ -25,7 +28,8 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.timer.start(16)  # Approximately 60 frames per second
 
     def wheelEvent(self, event):
-        self.translation_z += event.angleDelta().y() * 0.02
+        factor = np.max((abs(2*(self.translation_z - self.tz_min) / (self.tz_max - self.tz_min)),0.05))
+        self.translation_z += event.angleDelta().y() * 0.02 * factor
         self.translation_z = self.tz_min if self.translation_z >= self.tz_min else self.translation_z
         self.translation_z = self.tz_max if self.translation_z <= self.tz_max else self.translation_z
         self.update()
@@ -83,7 +87,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         fovy = 2 * np.atan(self.sensor_size[1] / (2 * self.focal_length)) * 180 / np.pi
-        gluPerspective(fovy, self.aspect_ratio, 1, abs(self.tz_max) + 10)  # Set up a 3D projection matrix
+        gluPerspective(fovy, self.aspect_ratio, abs(self.tz_min)*0.9, abs(self.tz_max) * 1.1)  # Set up a 3D projection matrix
         glTranslatef(self.translation_x, self.translation_y, self.translation_z)
 
     def setup_geometry(self):
@@ -100,6 +104,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
     def resizeGL(self, w, h):
         glViewport(0, 0, w, h)
         self.aspect_ratio = w / h
+        self.sensor_size = (w,h)
 
     def showEvent(self, event):
         if not self.done:
