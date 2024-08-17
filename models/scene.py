@@ -23,6 +23,7 @@ class Scene:
                         self.objects.append(obj)
                     elif action == 'remove':
                         self.objects.remove(obj)
+                self.update_queue.task_done()  # Indicate that the task is done
                 updated = True
             except queue.Empty:
                 break
