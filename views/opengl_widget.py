@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -17,6 +18,11 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.focal_length = 50.0  # Focal length in mm
         self.sensor_size = (36.0, 24.0)  # Sensor size in mm
         self.aspect_ratio = self.sensor_size[0] / self.sensor_size[1]
+
+        # Set up a timer to trigger regular redraws
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update)
+        self.timer.start(16)  # Approximately 60 frames per second
 
     def wheelEvent(self, event):
         self.translation_z += event.angleDelta().y() * 0.02
@@ -58,7 +64,8 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
 
     def paintGL(self):
         self.update_camera()
-        self.scene.process_updates()  # Handle pending updates to the scene
+        if self.scene.process_updates():  # Handle pending updates to the scene
+            self.update()  # Trigger a repaint if there were updates
         self.setup_geometry()
 
     def resizeGL(self, w, h):
