@@ -7,6 +7,10 @@ class SceneObject:
         self.color = color
         self.vertices = vertices
 
+    def update_position(self, dxyz):
+        self.position = self.position + np.array(dxyz)
+        self.vertices = self.vertices + np.array(dxyz)
+
     def render(self):
         glBegin(GL_TRIANGLES)
         glColor3f(*self.color)
@@ -15,10 +19,11 @@ class SceneObject:
         glEnd()
 
 class Triangle(SceneObject):
-    def __init__(self, color, center):
+    def __init__(self, color, center, size=np.array((1,1,0))):
         self.color = color
-        self.center = np.array(center)
-        self.vertices = np.array(((-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0))) + self.center
+        self.size = size
+        self.position = np.array(center)
+        self.vertices = np.array(((-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0)))*self.size + self.position
 
 class ImageObject(SceneObject):
     def __init__(self, image_path, position, size):
@@ -76,6 +81,10 @@ class ImageObject(SceneObject):
             (bottom_left, (0.0, 0.0)),
         ]
         return vertices
+
+    def update_position(self, dxyz):
+        self.position = self.position+np.array(dxyz)
+        self.vertices = self.create_vertices()
 
     def render(self):
         if self.texture_id is None:

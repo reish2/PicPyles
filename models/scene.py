@@ -1,6 +1,10 @@
 import threading
 import queue
 
+import numpy as np
+from models.geometry import SceneObject
+
+
 class Scene:
     def __init__(self):
         self.objects = []
@@ -28,3 +32,32 @@ class Scene:
             except queue.Empty:
                 break
         return updated
+
+    def query(self, cam_pos, click_pos_3d):
+        # Calculate the ray direction
+        ray_direction = (click_pos_3d - cam_pos) / np.linalg.norm(click_pos_3d - cam_pos)
+        world_near = cam_pos
+
+        # Check for intersection with each object
+        for obj in self.objects:
+            if isinstance(obj, SceneObject):
+                if self.ray_intersects_object(world_near, ray_direction, obj):
+                    return obj
+
+        return None
+
+    def ray_intersects_object(self, ray_origin, ray_direction, obj):
+        # Ray-plane intersection (assuming the object lies in the X-Y plane)
+        obj_normal = np.array([0.0, 0.0, 1.0])  # Assuming the object is aligned with the Z-axis
+        plane_point = obj.position  # A point on the plane (e.g., center of the object)
+
+        denom = np.dot(obj_normal, ray_direction)
+        if abs(denom) > 1e-6:  # Ensure the ray is not parallel to the plane
+            d = np.dot(plane_point - ray_origin, obj_normal) / denom
+            if d >= 0:
+                intersection_point = ray_origin + ray_direction * d
+                # Check if the intersection point is within the object's bounds
+                if (obj.position[0] - obj.size[0] / 2 <= intersection_point[0] <= obj.position[0] + obj.size[0] / 2 and
+                    obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2):
+                    return True
+        return False

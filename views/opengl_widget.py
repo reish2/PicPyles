@@ -32,18 +32,47 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
 
     def mousePressEvent(self, event):
         self.last_mouse_pos = event.pos()
+        self.current_button = event.button()
+
+        # Get the current viewport and matrices
+        width = self.width()
+        height = self.height()
+
+        # Query the scene for the object at the clicked position
+        cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
+        click_pos_3d = np.array((event.x()-width/2, -(event.y()-height/2), self.focal_length))
+        self.clicked_object = self.scene.query(cam_pos, click_pos_3d)
+
+        if self.clicked_object:
+            print(f"Object clicked: {self.clicked_object}")
+        else:
+            print("No object clicked.")
+
 
     def mouseMoveEvent(self, event):
         if self.last_mouse_pos is not None:
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
-            self.translation_x += dx * 0.01
-            self.translation_y -= dy * 0.01
+
+            if self.current_button == Qt.LeftButton and isinstance(self.clicked_object, SceneObject):
+                # Update the image position when LMB is pressed
+                self.clicked_object.update_position((dx * -self.translation_z / self.focal_length,
+                                     dy * self.translation_z / self.focal_length,
+                                     0))
+
+            elif self.current_button == Qt.MidButton or self.current_button == Qt.MiddleButton:
+                # Update the camera position when MMB is pressed
+                self.translation_x += dx * -self.translation_z / self.focal_length
+                self.translation_y -= dy * -self.translation_z / self.focal_length
+
             self.update()
+
         self.last_mouse_pos = event.pos()
 
     def mouseReleaseEvent(self, event):
         self.last_mouse_pos = None
+        self.current_button = None
+        self.clicked_object = None
 
     def initializeGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
