@@ -61,3 +61,34 @@ class Scene:
                     obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2):
                     return True
         return False
+
+    def inside_rectangle(self, obj, start, end):
+        if isinstance(obj.vertices, np.ndarray):
+            verts = obj.vertices
+        else:
+            verts = np.array([v[0] for v in obj.vertices])
+        minx = min(start[0], end[0])
+        maxx = max(start[0], end[0])
+        miny = min(start[1], end[1])
+        maxy = max(start[1], end[1])
+        if ((verts[:,0] >= minx) & (verts[:,0] <= maxx) &
+            (verts[:,1] >= miny) & (verts[:,1] <= maxy)).any():
+            return True
+        return False
+
+    def query_inside(self, cam_pos, click_start_3d, click_end_3d):
+        # Calculate the ray direction
+        start_ray_direction = (click_start_3d - cam_pos) / np.linalg.norm(click_start_3d - cam_pos)
+        end_ray_direction = (click_end_3d - cam_pos) / np.linalg.norm(click_end_3d - cam_pos)
+        object_plane_distance = -cam_pos[2] #objects are placed at z=0
+
+        start = start_ray_direction * object_plane_distance / start_ray_direction[2]
+        end = end_ray_direction * object_plane_distance / end_ray_direction[2]
+
+        # Check for intersection with each object
+        objs = []
+        for obj in self.objects:
+            if isinstance(obj, SceneObject):
+                if self.inside_rectangle(obj, start, end):
+                    objs.append(obj)
+        return objs

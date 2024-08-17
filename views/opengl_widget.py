@@ -1,3 +1,4 @@
+import PyQt5
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QOpenGLWidget
 from OpenGL.GL import *
@@ -13,6 +14,11 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.scene = scene
         self.done = False
         self.last_mouse_pos = None
+        self.current_button = None
+        self.selection_start = None  # Start point of the selection rectangle
+        self.selection_end = None  # End point of the selection rectangle
+        self.clicked_object = None
+        self.selected_objects = []
         self.translation_x = 0.0
         self.translation_y = 0.0
         self.translation_z = -10.0
@@ -38,45 +44,78 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.last_mouse_pos = event.pos()
         self.current_button = event.button()
 
-        # Get the current viewport and matrices
-        width = self.width()
-        height = self.height()
-
         # Query the scene for the object at the clicked position
-        cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
-        click_pos_3d = np.array((event.x()-width/2, -(event.y()-height/2), self.focal_length))
-        self.clicked_object = self.scene.query(cam_pos, click_pos_3d)
+        self.clicked_object = self.get_clicked_object(self.last_mouse_pos)
 
         if self.clicked_object:
             print(f"Object clicked: {self.clicked_object}")
         else:
+            # handle case if no object was hit by click
             print("No object clicked.")
+            if event.button() == Qt.LeftButton:
+                self.selection_start = event.pos()
+                self.selection_end = event.pos()
 
+    def get_clicked_object(self, click_point):
+        # Get the current viewport and matrices
+        click_pos_3d = self.get_3d_click_coordinate(click_point)
+        cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
+        clicked_object = self.scene.query(cam_pos, click_pos_3d)
+        return clicked_object
+
+    def get_3d_click_coordinate(self, click_point):
+        if isinstance(click_point, PyQt5.QtCore.QPoint):
+            x = click_point.x()
+            y = click_point.y()
+        else:
+            # tuple
+            x, y = click_point
+        width = self.width()
+        height = self.height()
+        click_pos_3d = np.array((x - width / 2, -(y - height / 2), self.focal_length))
+        return click_pos_3d
 
     def mouseMoveEvent(self, event):
         if self.last_mouse_pos is not None:
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
 
-            if self.current_button == Qt.LeftButton and isinstance(self.clicked_object, SceneObject):
+            if self.current_button == Qt.LeftButton and len(self.selected_objects)>0:
+                for obj in self.selected_objects:
+                    if isinstance(obj, SceneObject):
+                        obj.update_position((dx * -self.translation_z / self.focal_length,
+                                     dy * self.translation_z / self.focal_length,
+                                     0))
+            elif self.current_button == Qt.LeftButton and isinstance(self.clicked_object, SceneObject):
                 # Update the image position when LMB is pressed
                 self.clicked_object.update_position((dx * -self.translation_z / self.focal_length,
                                      dy * self.translation_z / self.focal_length,
                                      0))
-
+            elif self.current_button == Qt.LeftButton and self.clicked_object is None:
+                self.selection_end = event.pos()
             elif self.current_button == Qt.MidButton or self.current_button == Qt.MiddleButton:
                 # Update the camera position when MMB is pressed
                 self.translation_x += dx * -self.translation_z / self.focal_length
                 self.translation_y -= dy * -self.translation_z / self.focal_length
 
             self.update()
-
         self.last_mouse_pos = event.pos()
 
     def mouseReleaseEvent(self, event):
         self.last_mouse_pos = None
         self.current_button = None
         self.clicked_object = None
+
+        if self.selection_start and self.selection_end:
+            # Perform selection logic here, selecting objects inside the rectangle
+            click_start_3d = self.get_3d_click_coordinate(self.selection_start)
+            click_end_3d = self.get_3d_click_coordinate(self.selection_end)
+            cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
+            self.selected_objects = self.scene.query_inside(cam_pos, click_start_3d, click_end_3d)
+            print("Selection rectangle:", self.selection_start, self.selection_end, len(self.selected_objects))
+
+        self.selection_start = None
+        self.selection_end = None
 
     def initializeGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -100,6 +139,39 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         if self.scene.process_updates():  # Handle pending updates to the scene
             self.update()  # Trigger a repaint if there were updates
         self.setup_geometry()
+
+        # Draw the selection rectangle if applicable
+        self.draw_selection_rectangle()
+
+    def draw_selection_rectangle(self):
+        if self.selection_start is None or self.selection_end is None:
+            return
+
+        start = self.selection_start
+        end = self.selection_end
+
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, self.width(), self.height(), 0, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+
+        glColor3f(1.0, 1.0, 1.0)
+        glLineWidth(2.0)
+
+        glBegin(GL_LINE_LOOP)
+        glVertex2i(start.x(), start.y())
+        glVertex2i(end.x(), start.y())
+        glVertex2i(end.x(), end.y())
+        glVertex2i(start.x(), end.y())
+        glEnd()
+
+        glPopMatrix()
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
 
     def resizeGL(self, w, h):
         glViewport(0, 0, w, h)
