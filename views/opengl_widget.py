@@ -13,19 +13,25 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         super().__init__()
         self.scene = scene
         self.done = False
+
+        # mouse state tracking
         self.last_mouse_pos = None
         self.current_button = None
+
+        # selection box and results
         self.selection_start = None  # Start point of the selection rectangle
         self.selection_end = None  # End point of the selection rectangle
         self.clicked_object = None
         self.selected_objects = []
+
+        # camera settings
         self.translation_x = 0.0
         self.translation_y = 0.0
         self.translation_z = -10.0
         self.tz_min = -0.1
         self.tz_max = -100
         self.focal_length = 1000.0  # Focal length in mm
-        self.sensor_size = (800,600)  # Sensor size in mm
+        self.sensor_size = (800, 600)  # Sensor size in mm
         self.aspect_ratio = self.sensor_size[0] / self.sensor_size[1]
 
         # Set up a timer to trigger regular redraws
@@ -34,7 +40,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.timer.start(16)  # Approximately 60 frames per second
 
     def wheelEvent(self, event):
-        factor = np.max((abs(2*(self.translation_z - self.tz_min) / (self.tz_max - self.tz_min)),0.05))
+        factor = np.max((abs(2 * (self.translation_z - self.tz_min) / (self.tz_max - self.tz_min)), 0.05))
         self.translation_z += event.angleDelta().y() * 0.02 * factor
         self.translation_z = self.tz_min if self.translation_z >= self.tz_min else self.translation_z
         self.translation_z = self.tz_max if self.translation_z <= self.tz_max else self.translation_z
@@ -83,6 +89,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
                 self.reset_selected_bounding_boxes()
                 self.selected_objects = [self.clicked_object]
                 self.set_selected_bounding_boxes()
+            # else: clicked object is within the multi-select set? nothing to do! everything is already setup
         else:
             # No objects hit => empty selected objects list and start new multi select
             self.reset_selected_bounding_boxes()
@@ -94,12 +101,13 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
 
     def get_clicked_object(self, click_point):
         # Get the current viewport and matrices
-        click_pos_3d = self.get_3d_click_coordinate(click_point)
+        click_pos_3d = self.get_image_plane_3d_click_coordinate(click_point)
         cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
         clicked_object = self.scene.query(cam_pos, click_pos_3d)
         return clicked_object
 
-    def get_3d_click_coordinate(self, click_point):
+    def get_image_plane_3d_click_coordinate(self, click_point):
+        # get the 3D click coordinate on the image plane at focal_length from the camera
         if isinstance(click_point, PyQt5.QtCore.QPoint):
             x = click_point.x()
             y = click_point.y()
@@ -117,12 +125,15 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
             dy = event.pos().y() - self.last_mouse_pos.y()
 
             if self.current_button == Qt.LeftButton and self.selected_objects:
+                # we are moving selected_objects
                 for obj in self.selected_objects:
                     if isinstance(obj, SceneObject):
-                        obj.update_position((dx * -self.translation_z / self.focal_length,
-                                     dy * self.translation_z / self.focal_length,
-                                     0))
+                        new_position = (dx * -self.translation_z / self.focal_length,
+                                        dy * self.translation_z / self.focal_length,
+                                        0)
+                        obj.update_position(new_position)
             elif self.current_button == Qt.LeftButton and self.clicked_object is None:
+                # we are currently drawing a multi-select box
                 self.selection_end = event.pos()
             elif self.current_button == Qt.MidButton or self.current_button == Qt.MiddleButton:
                 # Update the camera position when MMB is pressed
@@ -139,8 +150,8 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
 
         if self.selection_start and self.selection_end:
             # Perform selection logic here, selecting objects inside the rectangle
-            click_start_3d = self.get_3d_click_coordinate(self.selection_start)
-            click_end_3d = self.get_3d_click_coordinate(self.selection_end)
+            click_start_3d = self.get_image_plane_3d_click_coordinate(self.selection_start)
+            click_end_3d = self.get_image_plane_3d_click_coordinate(self.selection_end)
             cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
             self.selected_objects = self.scene.query_inside(cam_pos, click_start_3d, click_end_3d)
             self.set_selected_bounding_boxes()
@@ -158,7 +169,8 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         fovy = 2 * np.atan(self.sensor_size[1] / (2 * self.focal_length)) * 180 / np.pi
-        gluPerspective(fovy, self.aspect_ratio, abs(self.tz_min)*0.9, abs(self.tz_max) * 1.1)  # Set up a 3D projection matrix
+        gluPerspective(fovy, self.aspect_ratio, abs(self.tz_min) * 0.9,
+                       abs(self.tz_max) * 1.1)  # Set up a 3D projection matrix
         glTranslatef(self.translation_x, self.translation_y, self.translation_z)
 
     def setup_geometry(self):
@@ -208,7 +220,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
     def resizeGL(self, w, h):
         glViewport(0, 0, w, h)
         self.aspect_ratio = w / h
-        self.sensor_size = (w,h)
+        self.sensor_size = (w, h)
 
     def showEvent(self, event):
         if not self.done:
