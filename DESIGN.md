@@ -63,6 +63,11 @@ PicPyles is a Python-based application designed to provide a robust solution for
 - **Performance Optimization**: Strategies for further optimization, particularly in memory management and rendering.
 - **Motion Photos**: have a representative thumbnail of the MPhoto with a playable icon on it. When opened or zoomed in it loops.
 - **Videos**: have a representative thumbnail of the video with a playable icon on it. When opened or zoomed in it plays.
+- **Undo Function**: IRL you have no undo, so why here?
+- **Image navigation**: with left & right key. Needs spatial sorting.
+- **Text annotations** with color selection
+- **Grouping** with bounding boxes
+- **Trash Pile** for each group, that is "out of the way"
 
 ## Challenges and Risks
 
