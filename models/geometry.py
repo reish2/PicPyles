@@ -6,6 +6,7 @@ class SceneObject:
     def __init__(self, color, vertices):
         self.color = color
         self.vertices = vertices
+        self.selected = False
 
     def update_position(self, dxyz):
         self.position = self.position + np.array(dxyz)
@@ -18,12 +19,59 @@ class SceneObject:
             glVertex3f(*vertex)
         glEnd()
 
+        # Render the bounding box if the object is selected
+        if self.selected:
+            self.render_bounding_box()
+
+    def render_bounding_box(self):
+        # Calculate the bounding box corners based on the object's vertices
+        min_corner = [0,0,0]
+        max_corner = [0,0,0]
+        if isinstance(self.vertices, np.ndarray):
+            min_corner = np.min(self.vertices, axis=0)
+            max_corner = np.max(self.vertices, axis=0)
+        else:
+            verts = [v[0] for v in self.vertices]
+            min_corner = np.min(verts, axis=0)
+            max_corner = np.max(verts, axis=0)
+
+        glColor3f(1.0, 1.0, 1.0)  # Red color for the bounding box
+        glLineWidth(4.0)  # Thicker lines for visibility
+
+        glBegin(GL_LINE_LOOP)
+        # Front face
+        glVertex3f(min_corner[0], min_corner[1], min_corner[2])
+        glVertex3f(max_corner[0], min_corner[1], min_corner[2])
+        glVertex3f(max_corner[0], max_corner[1], min_corner[2])
+        glVertex3f(min_corner[0], max_corner[1], min_corner[2])
+        glEnd()
+
+        glBegin(GL_LINE_LOOP)
+        # Back face
+        glVertex3f(min_corner[0], min_corner[1], max_corner[2])
+        glVertex3f(max_corner[0], min_corner[1], max_corner[2])
+        glVertex3f(max_corner[0], max_corner[1], max_corner[2])
+        glVertex3f(min_corner[0], max_corner[1], max_corner[2])
+        glEnd()
+
+        glBegin(GL_LINES)
+        # Connect the front and back faces
+        for i in range(4):
+            glVertex3f(min_corner[0] if i % 2 == 0 else max_corner[0],
+                       min_corner[1] if i < 2 else max_corner[1],
+                       min_corner[2])
+            glVertex3f(min_corner[0] if i % 2 == 0 else max_corner[0],
+                       min_corner[1] if i < 2 else max_corner[1],
+                       max_corner[2])
+        glEnd()
+
 class Triangle(SceneObject):
-    def __init__(self, color, center, size=np.array((1,1,0))):
+    def __init__(self, color, position, size=np.array((1, 1, 0))):
         self.color = color
         self.size = size
-        self.position = np.array(center)
+        self.position = np.array(position)
         self.vertices = np.array(((-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0)))*self.size + self.position
+        self.selected = False
 
 class ImageObject(SceneObject):
     def __init__(self, image_path, position, size):
@@ -32,6 +80,7 @@ class ImageObject(SceneObject):
         self.size = np.array(size)
         self.texture_id = None  # Delay texture loading
         self.vertices = self.create_vertices()
+        self.selected = False  # Flag to indicate if the object is selected
 
     def load_texture(self):
         if self.texture_id is not None:
@@ -108,6 +157,10 @@ class ImageObject(SceneObject):
 
         glBindTexture(GL_TEXTURE_2D, 0)
         glDisable(GL_TEXTURE_2D)
+
+        # Render the bounding box if the object is selected
+        if self.selected:
+            self.render_bounding_box()
 
         # Check for OpenGL errors
         error = glGetError()
