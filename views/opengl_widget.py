@@ -40,6 +40,21 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         self.translation_z = self.tz_max if self.translation_z <= self.tz_max else self.translation_z
         self.update()
 
+    def reset_selected_bounding_boxes(self):
+        print(f"reset_selected_bounding_boxes for {len(self.selected_objects)}")
+        for obj in self.selected_objects:
+            obj.selected = False
+
+    def set_selected_bounding_boxes(self):
+        print(f"set_selected_bounding_boxes for {len(self.selected_objects)}")
+        for obj in self.selected_objects:
+            obj.selected = True
+
+    def reset_all_bounding_boxes(self):
+        print(f"reset_all_bounding_boxes for {len(self.scene.objects)}")
+        for obj in self.scene.objects:
+            obj.selected = False
+
     def mousePressEvent(self, event):
         self.last_mouse_pos = event.pos()
         self.current_button = event.button()
@@ -47,10 +62,31 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         # Query the scene for the object at the clicked position
         self.clicked_object = self.get_clicked_object(self.last_mouse_pos)
 
+        # i have several cases to handle here
+        # 1. on down press, detect if an object was hit and save it
+        # 2. if button stays pressed, several options
+        #    * object hit on downpress
+        #      * if multi-select is empty, add object to multi select list => multi move on drag
+        #      * if clicked object is not in multi-select list => empty list and add clicked object => multi move
+        #      * if clicked object is in multi-select list => multi move
+        #    * no object hit on downpress
+        #      * empty multi-select list => start new multiselect box
+
         if self.clicked_object:
             print(f"Object clicked: {self.clicked_object}")
+            if not self.selected_objects:
+                # multiselect is empty
+                self.selected_objects = [self.clicked_object]
+                self.set_selected_bounding_boxes()
+            elif self.clicked_object not in self.selected_objects:
+                # new object selected
+                self.reset_selected_bounding_boxes()
+                self.selected_objects = [self.clicked_object]
+                self.set_selected_bounding_boxes()
         else:
-            # handle case if no object was hit by click
+            # No objects hit => empty selected objects list and start new multi select
+            self.reset_selected_bounding_boxes()
+            self.selected_objects = []
             print("No object clicked.")
             if event.button() == Qt.LeftButton:
                 self.selection_start = event.pos()
@@ -80,15 +116,10 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
 
-            if self.current_button == Qt.LeftButton and len(self.selected_objects)>0:
+            if self.current_button == Qt.LeftButton and self.selected_objects:
                 for obj in self.selected_objects:
                     if isinstance(obj, SceneObject):
                         obj.update_position((dx * -self.translation_z / self.focal_length,
-                                     dy * self.translation_z / self.focal_length,
-                                     0))
-            elif self.current_button == Qt.LeftButton and isinstance(self.clicked_object, SceneObject):
-                # Update the image position when LMB is pressed
-                self.clicked_object.update_position((dx * -self.translation_z / self.focal_length,
                                      dy * self.translation_z / self.focal_length,
                                      0))
             elif self.current_button == Qt.LeftButton and self.clicked_object is None:
@@ -112,6 +143,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
             click_end_3d = self.get_3d_click_coordinate(self.selection_end)
             cam_pos = np.array((self.translation_x, self.translation_y, self.translation_z))
             self.selected_objects = self.scene.query_inside(cam_pos, click_start_3d, click_end_3d)
+            self.set_selected_bounding_boxes()
             print("Selection rectangle:", self.selection_start, self.selection_end, len(self.selected_objects))
 
         self.selection_start = None

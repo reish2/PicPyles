@@ -29,7 +29,7 @@ class PicPylesController:
     def modify_scene_thread(self):
         while self.running:
             # Example: Adding and removing objects periodically
-            triangle = Triangle(color=(0.0, 0.0, 1.0), center=(0,-1,0))
+            triangle = Triangle(color=(0.0, 0.0, 1.0), position=(0, -1, 0))
             time.sleep(1)
             print("adding triangle")
             self.scene.add_object(triangle)
