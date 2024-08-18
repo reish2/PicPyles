@@ -130,7 +130,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
                     if isinstance(obj, SceneObject):
                         new_position = (dx * -self.translation_z / self.focal_length,
                                         dy * self.translation_z / self.focal_length,
-                                        0)
+                                        0.0)
                         obj.update_position(new_position)
             elif self.current_button == Qt.LeftButton and self.clicked_object is None:
                 # we are currently drawing a multi-select box

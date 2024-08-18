@@ -1,32 +1,53 @@
-from OpenGL.GL import *
 import numpy as np
+from OpenGL.GL import *
 from PIL import Image
 
+
 class SceneObject:
-    def __init__(self, color, vertices):
-        self.color = color
-        self.vertices = vertices
+    def __init__(self, position, size, color=None):
+        self.position = np.array(position).astype(np.float64)
+        self.size = np.array(size).astype(np.float64)
+        self.color = color if color is not None else (1.0, 1.0, 1.0)
+        self.vertices = self.create_vertices()
         self.selected = False
 
+    def create_vertices(self):
+        """
+        Create the vertices based on the position and size of the object.
+        This method can be overridden by subclasses to define specific shapes.
+        """
+        half_size = self.size / 2.0
+        return np.array([
+            [-half_size[0], -half_size[1], 0.0],
+            [half_size[0], -half_size[1], 0.0],
+            [half_size[0], half_size[1], 0.0],
+            [-half_size[0], half_size[1], 0.0]
+        ]) + self.position
+
     def update_position(self, dxyz):
-        self.position = self.position + np.array(dxyz)
-        self.vertices = self.vertices + np.array(dxyz)
+        self.position += np.array(dxyz)
+        self.vertices = self.create_vertices()
 
     def render(self):
-        glBegin(GL_TRIANGLES)
-        glColor3f(*self.color)
+        self.render_object()
+        if self.selected:
+            self.render_bounding_box()
+
+    def render_object(self):
+        """
+        Render the object. This method should be overridden by subclasses to define specific drawing logic.
+        """
+        glBegin(GL_QUADS)
+        if self.color:
+            glColor3f(*self.color)
         for vertex in self.vertices:
             glVertex3f(*vertex)
         glEnd()
 
-        # Render the bounding box if the object is selected
-        if self.selected:
-            self.render_bounding_box()
-
     def render_bounding_box(self):
         # Calculate the bounding box corners based on the object's vertices
-        min_corner = [0,0,0]
-        max_corner = [0,0,0]
+        min_corner = [0, 0, 0]
+        max_corner = [0, 0, 0]
         if isinstance(self.vertices, np.ndarray):
             min_corner = np.min(self.vertices, axis=0)
             max_corner = np.max(self.vertices, axis=0)
@@ -65,34 +86,45 @@ class SceneObject:
                        max_corner[2])
         glEnd()
 
+
 class Triangle(SceneObject):
-    def __init__(self, color, position, size=np.array((1, 1, 0))):
-        self.color = color
-        self.size = size
-        self.position = np.array(position)
-        self.vertices = np.array(((-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0)))*self.size + self.position
-        self.selected = False
+    def __init__(self, color, position, size=np.array((1.0, 1.0, 0.0))):
+        super().__init__(position, size, color)
+        self.vertices = self.create_vertices()
+
+    def create_vertices(self):
+        half_size = self.size / 2.0
+        return np.array([
+            self.position + [-half_size[0], -half_size[1], 0.0],
+            self.position + [half_size[0], -half_size[1], 0.0],
+            self.position + [0.0, half_size[1], 0.0]
+        ])
+
+    def render_object(self):
+        glBegin(GL_TRIANGLES)
+        glColor3f(*self.color)
+        for vertex in self.vertices:
+            glVertex3f(*vertex)
+        glEnd()
+
 
 class ImageObject(SceneObject):
     def __init__(self, image_path, position, size):
+        super().__init__(position, size)
         self.image_path = image_path
-        self.position = np.array(position)
-        self.size = np.array(size)
-        self.texture_id = None  # Delay texture loading
-        self.vertices = self.create_vertices()
-        self.selected = False  # Flag to indicate if the object is selected
+        self.texture_id = None
 
     def load_texture(self):
         if self.texture_id is not None:
-            return self.texture_id  # Texture already loaded
+            return self.texture_id
 
         try:
             image = Image.open(self.image_path)
-            image = image.transpose(Image.FLIP_TOP_BOTTOM)  # Flip the image vertically for OpenGL
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
 
-            self.size = np.array([self.size[1]/height * width, self.size[1]])
+            self.size = np.array([self.size[1] / height * width, self.size[1]])
             self.vertices = self.create_vertices()
 
             texture_id = glGenTextures(1)
@@ -111,7 +143,6 @@ class ImageObject(SceneObject):
             glBindTexture(GL_TEXTURE_2D, 0)
 
             self.texture_id = texture_id
-            print(f"Texture loaded successfully with ID {texture_id}")
             return texture_id
         except Exception as e:
             print(f"Failed to load texture: {e}")
@@ -134,13 +165,9 @@ class ImageObject(SceneObject):
         ]
         return vertices
 
-    def update_position(self, dxyz):
-        self.position = self.position+np.array(dxyz)
-        self.vertices = self.create_vertices()
-
-    def render(self):
+    def render_object(self):
         if self.texture_id is None:
-            self.load_texture()  # Load the texture on first render
+            self.load_texture()
 
         if self.texture_id == 0:
             print("No valid texture to render.")
