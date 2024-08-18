@@ -92,6 +92,9 @@ class ImageObject(SceneObject):
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
 
+            self.size = np.array([self.size[1]/height * width, self.size[1]])
+            self.vertices = self.create_vertices()
+
             texture_id = glGenTextures(1)
             if texture_id == 0:
                 raise ValueError("Failed to generate texture")
