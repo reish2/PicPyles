@@ -1,6 +1,7 @@
 import numpy as np
 from OpenGL.GL import *
 from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
 
 class SceneObject:
     def __init__(self, position, size, color=None, text="Test"):
@@ -164,8 +165,8 @@ class SceneObject:
 
 
 class Triangle(SceneObject):
-    def __init__(self, color, position, size=np.array((1.0, 1.0, 0.0))):
-        super().__init__(position, size, color)
+    def __init__(self, position, size=np.array((1.0, 1.0, 0.0)), color=(0.0, 0.0, 1.0), text=""):
+        super().__init__(position, size, color, text)
         self.vertices = self.create_vertices()
 
     def create_vertices(self):
@@ -185,10 +186,22 @@ class Triangle(SceneObject):
 
 
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size):
-        super().__init__(position, size)
+    def __init__(self, image_path, position, size, name=None):
+        if not name:
+            name = Path(image_path).name
+        super().__init__(position, size,text=name)
         self.image_path = image_path
         self.texture_id = None
+
+    def to_dict(self):
+        return {"image_path":self.image_path, "position": self.position, "size": self.size, "name":self.text}
+
+    def from_dict(self,dict):
+        try:
+            return ImageObject(**dict)
+        except Exception as e:
+            print(f"Failed to load ImageObject: {e}")
+            return None
 
     def load_texture(self):
         if self.texture_id is not None:
