@@ -77,6 +77,7 @@ class PicPylesOpenGLWidget(QOpenGLWidget):
         #      * if clicked object is in multi-select list => multi move
         #    * no object hit on downpress
         #      * empty multi-select list => start new multiselect box
+        # 3. on double click and clicked_object is folder => deconstruct scene and initialize new one with new path
 
         if self.clicked_object:
             print(f"Object clicked: {self.clicked_object}")
