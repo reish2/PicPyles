@@ -21,13 +21,13 @@ class SceneObject:
             font = ImageFont.truetype("assets/liberation-sans/LiberationSans-Regular.ttf", font_size)
             # Use getbbox() to calculate the size of the text
             text_bbox = font.getbbox(text)
-            text_width = text_bbox[2] + 2
-            text_height = text_bbox[3] + 2
+            text_width = text_bbox[2] + 4
+            text_height = text_bbox[3] + 4
 
             # Create an image with the text
             image = Image.new("RGBA", (text_width, text_height), color=(255,255,255,0))
             draw = ImageDraw.Draw(image)
-            draw.text((0, 0), text, font=font, fill=(32,32,64,255))
+            draw.text((0, 0), text, font=font, fill=(64,64,80,255))
 
             # Convert the image to bytes and create a texture
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -89,7 +89,7 @@ class SceneObject:
         glColor3f(1.0, 1.0, 1.0)
 
         glPushMatrix()
-        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1/2 - 0.05), self.position[2]+0.01)
+        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1/2 - 0.05), self.position[2]+0.0001)
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0)
         glVertex3f(-text_width / 200.0, -text_height / 200.0, 0.0)
