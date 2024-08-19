@@ -81,7 +81,7 @@ class SceneObject:
             return
 
         texture_id, _text_width, _text_height = self.font_texture
-        text_width, text_height = _text_width/4, _text_height/4
+        text_width, text_height = _text_width/8, _text_height/8
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)  # Enable blending
@@ -90,7 +90,7 @@ class SceneObject:
         glColor3f(1.0, 1.0, 1.0)
 
         glPushMatrix()
-        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1/2 - 0.05), self.position[2]+0.0001)
+        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1/2 + 0.03), self.position[2])
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0)
         glVertex3f(-text_width / 200.0, -text_height / 200.0, 0.0)
@@ -186,22 +186,21 @@ class Triangle(SceneObject):
 
 
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size, name=None):
+    def __init__(self, image_path, position, size, name=None, parent_dir = None):
+        self.image_path = image_path
+        if parent_dir:
+            self.image_path = Path(parent_dir) / image_path
         if not name:
             name = Path(image_path).name
         super().__init__(position, size,text=name)
-        self.image_path = image_path
         self.texture_id = None
 
-    def to_dict(self):
-        return {"image_path":self.image_path, "position": self.position, "size": self.size, "name":self.text}
-
-    def from_dict(self,dict):
-        try:
-            return ImageObject(**dict)
-        except Exception as e:
-            print(f"Failed to load ImageObject: {e}")
-            return None
+    def to_dict(self,preserve_image_path=False):
+        # dict keys must be kept consistant with __init__(**kwargs)
+        if preserve_image_path:
+            return {"image_path": self.image_path, "position": list(self.position), "size": list(self.size), "name": self.text}
+        else:
+            return {"image_path":Path(self.image_path).name, "position": list(self.position), "size": list(self.size), "name":self.text}
 
     def load_texture(self):
         if self.texture_id is not None:
@@ -212,8 +211,12 @@ class ImageObject(SceneObject):
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
+            sx, sy = self.size
+            scale_factor = sy / (min(width,height))
 
-            self.size = np.array([self.size[1] / height * width, self.size[1]])
+            print(f"S1 {self.size}")
+            self.size = np.array([width * scale_factor, height * scale_factor])
+            print(f"S2 {self.size}")
             self.vertices = self.create_vertices()
 
             texture_id = glGenTextures(1)
