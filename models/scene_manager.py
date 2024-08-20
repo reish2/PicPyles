@@ -20,7 +20,7 @@ class SceneManager:
 
         self.images = []  # list of geometry.ImageObject
         self.folders = [
-            ImageObject("assets/parent_folder.png", np.array((0.0, 0.0, 0.0)), self.default_image_size, "..",
+            ImageObject("assets/parent_folder.jpg", np.array((0.0, 0.0, 0.0)), self.default_image_size, "..",
                         object_type="folder")]
 
         if not self.ppyles_folder.exists():
@@ -85,7 +85,7 @@ class SceneManager:
             for k, new_folder_name in enumerate(new_folder_names):
                 w, h = self.default_image_spacing
                 new_pos = np.array((u_[k] * w, -v_[k] * h, 0.0)) + new_grid_offset
-                new_folder_object = ImageObject("assets/folder2.png", new_pos, self.default_image_size, new_folder_name,
+                new_folder_object = ImageObject("assets/folder2.jpg", new_pos, self.default_image_size, new_folder_name,
                                                 object_type="folder")
                 self.folders.append(new_folder_object)
             for k, new_image_name in enumerate(new_image_names):
