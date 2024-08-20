@@ -20,8 +20,9 @@ class Controller:
                 self.error_dialog("No folder was selected for viewing. Closing app.")
                 sys.exit(1)
         self.scene_manager = SceneManager(path)
-        self.window = MainWindow(self.scene)
+        self.window = MainWindow(self.scene, self.load_folder_callback)
         self.running = True
+        self.clear_scene = True
         self.background_thread = threading.Thread(target=self.modify_scene_thread, daemon=True)
         self.background_thread.start()
 
@@ -46,8 +47,11 @@ class Controller:
         error_dialog.setStandardButtons(QMessageBox.Ok)
         error_dialog.exec_()
 
-    def add_object(self, object):
-        self.scene.add_object(object)
+    def load_folder_callback(self, new_folder_name):
+        self.scene_manager.save_state()
+        self.clear_scene = True
+        current_path = self.scene_manager.path
+        self.scene_manager = SceneManager(current_path / new_folder_name)
 
     def modify_scene_thread(self):
         # TODO:
@@ -61,6 +65,9 @@ class Controller:
                 for image_object in self.scene_manager.list_images():
                     self.scene.add_object(image_object)
                 self.scene_manager.redraw_scene = False
+            if self.clear_scene:
+                self.scene.remove_all_objects()
+                self.clear_scene = False
             time.sleep(0.1)
             self.scene.update_queue.join()  # Wait for the object to be added
         self.scene_manager.save_state()

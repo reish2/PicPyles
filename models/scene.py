@@ -18,6 +18,10 @@ class Scene:
     def remove_object(self, obj):
         self.update_queue.put(('remove', obj))
 
+    def remove_all_objects(self):
+        for obj in self.objects:
+            self.update_queue.put(('remove', obj))
+
     def process_updates(self):
         updated = False
         while True:
