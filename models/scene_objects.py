@@ -187,8 +187,9 @@ class Triangle(SceneObject):
 
 
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size, name=None, parent_dir=None):
+    def __init__(self, image_path, position, size, name=None, parent_dir=None,object_type="image"):
         self.image_path = image_path
+        self.object_type = object_type # "image" or "folder"
         if parent_dir:
             self.image_path = Path(parent_dir) / image_path
         if not name:
@@ -200,10 +201,10 @@ class ImageObject(SceneObject):
         # dict keys must be kept consistant with __init__(**kwargs)
         if preserve_image_path:
             return {"image_path": self.image_path, "position": list(self.position), "size": list(self.size),
-                    "name": self.text}
+                    "name": self.text, "object_type":self.object_type}
         else:
             return {"image_path": Path(self.image_path).name, "position": list(self.position), "size": list(self.size),
-                    "name": self.text}
+                    "name": self.text, "object_type":self.object_type}
 
     def load_texture(self):
         if self.texture_id is not None:
@@ -215,11 +216,9 @@ class ImageObject(SceneObject):
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
             sx, sy = self.size
-            scale_factor = sy / (min(width, height))
+            scale_factor = min(sx,sy) / (min(width, height))
 
-            print(f"S1 {self.size}")
             self.size = np.array([width * scale_factor, height * scale_factor])
-            print(f"S2 {self.size}")
             self.vertices = self.create_vertices()
 
             texture_id = glGenTextures(1)

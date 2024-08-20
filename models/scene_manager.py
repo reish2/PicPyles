@@ -8,17 +8,20 @@ from models.scene_objects import ImageObject
 
 
 class SceneManager:
-    # TODO: where to call SceneManager from? maybe PicPylesController.modify_scene_thread()
     def __init__(self, path):
         self.path = Path(path)
         self.ppyles_folder = self.path / '.ppyles'
-        self.images = []  # list of geometry.ImageObject
-        self.folders = []  # list of geometry.ImageObject with same folder image
+        self.state_file = self.ppyles_folder / 'state.json'
+
         self.min_pos = np.array((0.0, 0.0, 0.0))
         self.max_pos = np.array((0.0, 0.0, 0.0))
         self.default_image_size = (2.0, 2.0 * 9.0 / 16.0)
         self.default_image_spacing = tuple(1.075 * _ for _ in self.default_image_size)
-        self.state_file = self.ppyles_folder / 'state.json'
+
+        self.images = []  # list of geometry.ImageObject
+        self.folders = [
+            ImageObject("assets/parent_folder.png", np.array((0.0, 0.0, 0.0)), self.default_image_size, "..",
+                        object_type="folder")]
 
         if not self.ppyles_folder.exists():
             self.ppyles_folder.mkdir(parents=True)
@@ -35,17 +38,13 @@ class SceneManager:
         """Scan the directory for images and subdirectories."""
         supported_formats = ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif')
 
-        # TODO
-        # * place new items in grid somewhere close to origin
-        # * create image objects for each new image and folder
-
         # 1. find all folder contents (dont recurse)
         # 2. split sets into new and old images. old images already have a posituiona and size. new ones dont.
         old_image_names = [_.image_path.name for _ in self.images]
         old_folder_names = [_.text for _ in self.folders]
 
         all_image_names_in_folder = []
-        all_folder_names_in_folder = []
+        all_folder_names_in_folder = [".."]
         new_image_names = []
         new_folder_names = []
         for item in self.path.iterdir():
@@ -86,13 +85,14 @@ class SceneManager:
             for k, new_folder_name in enumerate(new_folder_names):
                 w, h = self.default_image_spacing
                 new_pos = np.array((u_[k] * w, -v_[k] * h, 0.0)) + new_grid_offset
-                new_folder_object = ImageObject("assets/folder2.png", new_pos, self.default_image_size, new_folder_name)
+                new_folder_object = ImageObject("assets/folder2.png", new_pos, self.default_image_size, new_folder_name,
+                                                object_type="folder")
                 self.folders.append(new_folder_object)
             for k, new_image_name in enumerate(new_image_names):
                 w, h = self.default_image_spacing
                 new_pos = np.array((u_[k + new_folder_count] * w, -v_[k + new_folder_count] * h, 0.0)) + new_grid_offset
                 new_image_object = ImageObject(new_image_name, new_pos, self.default_image_size, new_image_name,
-                                               parent_dir=self.path)
+                                               parent_dir=self.path, object_type="image")
                 self.images.append(new_image_object)
 
         self.save_state()
