@@ -1,7 +1,9 @@
+from pathlib import Path
+
 import numpy as np
 from OpenGL.GL import *
 from PIL import Image, ImageDraw, ImageFont
-from pathlib import Path
+
 
 class SceneObject:
     def __init__(self, position, size, color=None, text="Test"):
@@ -26,9 +28,9 @@ class SceneObject:
             text_height = text_bbox[3] + 4
 
             # Create an image with the text
-            image = Image.new("RGBA", (text_width, text_height), color=(255,255,255,0))
+            image = Image.new("RGBA", (text_width, text_height), color=(255, 255, 255, 0))
             draw = ImageDraw.Draw(image)
-            draw.text((0, 0), text, font=font, fill=(64,64,80,255))
+            draw.text((0, 0), text, font=font, fill=(64, 64, 80, 255))
 
             # Convert the image to bytes and create a texture
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -46,7 +48,6 @@ class SceneObject:
         except Exception as e:
             print(f"Failed to load texture: {e}")
             return 0
-
 
     def create_vertices(self):
         """
@@ -81,7 +82,7 @@ class SceneObject:
             return
 
         texture_id, _text_width, _text_height = self.font_texture
-        text_width, text_height = _text_width/8, _text_height/8
+        text_width, text_height = _text_width / 8, _text_height / 8
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)  # Enable blending
@@ -90,7 +91,7 @@ class SceneObject:
         glColor3f(1.0, 1.0, 1.0)
 
         glPushMatrix()
-        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1/2 + 0.03), self.position[2])
+        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1 / 2 + 0.03), self.position[2])
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0)
         glVertex3f(-text_width / 200.0, -text_height / 200.0, 0.0)
@@ -186,21 +187,23 @@ class Triangle(SceneObject):
 
 
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size, name=None, parent_dir = None):
+    def __init__(self, image_path, position, size, name=None, parent_dir=None):
         self.image_path = image_path
         if parent_dir:
             self.image_path = Path(parent_dir) / image_path
         if not name:
             name = Path(image_path).name
-        super().__init__(position, size,text=name)
+        super().__init__(position, size, text=name)
         self.texture_id = None
 
-    def to_dict(self,preserve_image_path=False):
+    def to_dict(self, preserve_image_path=False):
         # dict keys must be kept consistant with __init__(**kwargs)
         if preserve_image_path:
-            return {"image_path": self.image_path, "position": list(self.position), "size": list(self.size), "name": self.text}
+            return {"image_path": self.image_path, "position": list(self.position), "size": list(self.size),
+                    "name": self.text}
         else:
-            return {"image_path":Path(self.image_path).name, "position": list(self.position), "size": list(self.size), "name":self.text}
+            return {"image_path": Path(self.image_path).name, "position": list(self.position), "size": list(self.size),
+                    "name": self.text}
 
     def load_texture(self):
         if self.texture_id is not None:
@@ -212,7 +215,7 @@ class ImageObject(SceneObject):
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
             sx, sy = self.size
-            scale_factor = sy / (min(width,height))
+            scale_factor = sy / (min(width, height))
 
             print(f"S1 {self.size}")
             self.size = np.array([width * scale_factor, height * scale_factor])

@@ -1,8 +1,9 @@
-import threading
 import queue
+import threading
 
 import numpy as np
-from models.geometry import SceneObject
+
+from models.scene_objects import SceneObject
 
 
 class Scene:
@@ -47,11 +48,11 @@ class Scene:
         return None
 
     def ray_intersects_object(self, ray_origin, ray_direction, obj):
-        object_plane_distance = -ray_origin[2] #objects are placed at z=0
+        object_plane_distance = -ray_origin[2]  # objects are placed at z=0
         intersection_point = ray_direction * object_plane_distance / ray_direction[2] - ray_origin
         # Check if the intersection point is within the object's bounds
         if (obj.position[0] - obj.size[0] / 2 <= intersection_point[0] <= obj.position[0] + obj.size[0] / 2 and
-            obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2):
+                obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2):
             return True
         return False
 
@@ -64,8 +65,8 @@ class Scene:
         maxx = max(start[0], end[0])
         miny = min(start[1], end[1])
         maxy = max(start[1], end[1])
-        if ((verts[:,0] >= minx) & (verts[:,0] <= maxx) &
-            (verts[:,1] >= miny) & (verts[:,1] <= maxy)).any():
+        if ((verts[:, 0] >= minx) & (verts[:, 0] <= maxx) &
+            (verts[:, 1] >= miny) & (verts[:, 1] <= maxy)).any():
             return True
         return False
 
@@ -73,7 +74,7 @@ class Scene:
         # Calculate the ray direction
         start_ray_direction = click_start_3d / np.linalg.norm(click_start_3d)
         end_ray_direction = click_end_3d / np.linalg.norm(click_end_3d)
-        object_plane_distance = -cam_pos[2] #objects are placed at z=0
+        object_plane_distance = -cam_pos[2]  # objects are placed at z=0
 
         start = start_ray_direction * object_plane_distance / start_ray_direction[2] - cam_pos
         end = end_ray_direction * object_plane_distance / end_ray_direction[2] - cam_pos
