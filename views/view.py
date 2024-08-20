@@ -1,14 +1,24 @@
 import PyQt5
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtWidgets import QOpenGLWidget
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import numpy as np
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow
 
-from models.geometry import SceneObject
+from models.scene_objects import SceneObject
 
 
-class PicPylesOpenGLWidget(QOpenGLWidget):
+class MainWindow(QMainWindow):
+    def __init__(self, scene):
+        super().__init__()
+        self.setWindowTitle("PicPyles")
+        self.resize(800, 600)
+        self.move(100, 100)
+        self.opengl_widget = OpenGLWidget(scene)
+        self.setCentralWidget(self.opengl_widget)
+
+
+class OpenGLWidget(QOpenGLWidget):
     def __init__(self, scene):
         super().__init__()
         self.scene = scene

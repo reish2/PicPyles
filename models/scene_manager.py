@@ -1,11 +1,10 @@
-from pathlib import Path
 import json
-from tkinter import Image
+from pathlib import Path
 
 import numpy as np
 from numpy.ma.core import arange
 
-from models.geometry import ImageObject
+from models.scene_objects import ImageObject
 
 
 class SceneManager:
@@ -13,11 +12,11 @@ class SceneManager:
     def __init__(self, path):
         self.path = Path(path)
         self.ppyles_folder = self.path / '.ppyles'
-        self.images = [] # list of geometry.ImageObject
-        self.folders = [] # list of geometry.ImageObject with same folder image
-        self.min_pos = np.array((0.0,0.0,0.0))
+        self.images = []  # list of geometry.ImageObject
+        self.folders = []  # list of geometry.ImageObject with same folder image
+        self.min_pos = np.array((0.0, 0.0, 0.0))
         self.max_pos = np.array((0.0, 0.0, 0.0))
-        self.default_image_size = (2.0,2.0*9.0/16.0)
+        self.default_image_size = (2.0, 2.0 * 9.0 / 16.0)
         self.default_image_spacing = tuple(1.075 * _ for _ in self.default_image_size)
         self.state_file = self.ppyles_folder / 'state.json'
 
@@ -29,7 +28,7 @@ class SceneManager:
             # * load state needs to check if images have been removed
             # * update needs to check for new images and folders, then find a good place to put them
             self.load_state()
-            self.scan_directory() # scan for changes
+            self.scan_directory()  # scan for changes
         self.redraw_scene = True
 
     def scan_directory(self):
@@ -77,22 +76,23 @@ class SceneManager:
         new_grid_offset = np.array((self.max_pos[0] + self.default_image_spacing[0], self.min_pos[1], 0.0))
         new_image_count = len(new_image_names)
         new_folder_count = len(new_folder_names)
-        new_object_count = new_image_count+new_folder_count
+        new_object_count = new_image_count + new_folder_count
         if new_object_count > 0:
             self.redraw_scene = True
-            grid_dim = np.ceil(np.sqrt(len(new_image_names)+len(new_folder_names)))
-            u_,v_ = np.meshgrid(arange(grid_dim),arange(grid_dim))
+            grid_dim = np.ceil(np.sqrt(len(new_image_names) + len(new_folder_names)))
+            u_, v_ = np.meshgrid(arange(grid_dim), arange(grid_dim))
             u_ = u_.flatten()
             v_ = v_.flatten()
             for k, new_folder_name in enumerate(new_folder_names):
-                w,h = self.default_image_spacing
+                w, h = self.default_image_spacing
                 new_pos = np.array((u_[k] * w, -v_[k] * h, 0.0)) + new_grid_offset
-                new_folder_object = ImageObject("assets/folder2.png",new_pos,self.default_image_size,new_folder_name)
+                new_folder_object = ImageObject("assets/folder2.png", new_pos, self.default_image_size, new_folder_name)
                 self.folders.append(new_folder_object)
             for k, new_image_name in enumerate(new_image_names):
-                w,h = self.default_image_spacing
-                new_pos = np.array((u_[k+new_folder_count] * w, -v_[k+new_folder_count] * h, 0.0)) + new_grid_offset
-                new_image_object = ImageObject(new_image_name,new_pos,self.default_image_size,new_image_name,parent_dir=self.path)
+                w, h = self.default_image_spacing
+                new_pos = np.array((u_[k + new_folder_count] * w, -v_[k + new_folder_count] * h, 0.0)) + new_grid_offset
+                new_image_object = ImageObject(new_image_name, new_pos, self.default_image_size, new_image_name,
+                                               parent_dir=self.path)
                 self.images.append(new_image_object)
 
         self.save_state()
@@ -115,7 +115,7 @@ class SceneManager:
             try:
                 with self.state_file.open('r') as f:
                     state = json.load(f)
-                    self.images = [ImageObject(**_,parent_dir=self.path) for _ in state.get('images', [])]
+                    self.images = [ImageObject(**_, parent_dir=self.path) for _ in state.get('images', [])]
                     self.folders = [ImageObject(**_) for _ in state.get('folders', [])]
             except json.JSONDecodeError as e:
                 print(f"Failed to load state file {self.state_file}: {e}")
@@ -130,7 +130,7 @@ class SceneManager:
         if len(self.folders) > 0:
             positions += [_.position for _ in self.folders]
 
-        if len(positions)>0:
+        if len(positions) > 0:
             positions = np.vstack(positions)
             self.min_pos = np.min(positions, axis=0)
             self.max_pos = np.max(positions, axis=0)

@@ -1,22 +1,15 @@
 import sys
-import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
-from models.scene import Scene
-from models.geometry import Triangle
-from models.scene_manager import SceneManager
-from views.opengl_widget import PicPylesOpenGLWidget
 import threading
+import time
 
-class PicPylesWindow(QMainWindow):
-    def __init__(self, scene):
-        super().__init__()
-        self.setWindowTitle("PicPyles")
-        self.resize(800, 600)
-        self.move(100, 100)
-        self.opengl_widget = PicPylesOpenGLWidget(scene)
-        self.setCentralWidget(self.opengl_widget)
+from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 
-class PicPylesController:
+from models.scene import Scene
+from models.scene_manager import SceneManager
+from views.view import MainWindow
+
+
+class Controller:
     def __init__(self, path=None):
         self.app = QApplication([])
         self.scene = Scene()
@@ -27,7 +20,7 @@ class PicPylesController:
                 self.error_dialog("No folder was selected for viewing. Closing app.")
                 sys.exit(1)
         self.scene_manager = SceneManager(path)
-        self.window = PicPylesWindow(self.scene)
+        self.window = MainWindow(self.scene)
         self.running = True
         self.background_thread = threading.Thread(target=self.modify_scene_thread, daemon=True)
         self.background_thread.start()
