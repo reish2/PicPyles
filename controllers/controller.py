@@ -49,9 +49,14 @@ class Controller:
 
     def load_folder_callback(self, new_folder_name):
         self.scene_manager.save_state()
+        new_abs_path = (self.scene_manager.path / new_folder_name).absolute()
         self.clear_scene = True
-        current_path = self.scene_manager.path
-        self.scene_manager = SceneManager(current_path / new_folder_name)
+        try:
+            self.scene_manager = SceneManager(new_abs_path)
+        except Exception as e:
+            print(f"Loading folder {new_abs_path} failed with exception {e}")
+            self.scene_manager = SceneManager(self.scene_manager.path)
+
 
     def modify_scene_thread(self):
         # TODO:
