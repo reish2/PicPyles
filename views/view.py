@@ -3,6 +3,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
+from PyQt5.QtGui import QSurfaceFormat
 from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
 
 from models.scene_objects import SceneObject
@@ -46,6 +47,8 @@ class OpenGLWidget(QOpenGLWidget):
 
     def __init__(self, scene):
         super().__init__()
+        self.setFormat(self.get_opengl_format())  # Set the format with MSAA
+
         self.scene = scene
         self.done = False
 
@@ -73,6 +76,11 @@ class OpenGLWidget(QOpenGLWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(16)  # Approximately 60 frames per second
+
+    def get_opengl_format(self):
+        format = QSurfaceFormat()
+        format.setSamples(4)  # Set the number of samples for MSAA
+        return format
 
     def wheelEvent(self, event):
         factor = np.max((abs(2 * (self.translation_z - self.tz_min) / (self.tz_max - self.tz_min)), 0.05))
@@ -205,7 +213,14 @@ class OpenGLWidget(QOpenGLWidget):
         self.selection_end = None
 
     def initializeGL(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_MULTISAMPLE)
+        glEnable(GL_LINE_SMOOTH)
+        glEnable(GL_POINT_SMOOTH)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+        glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glClearColor(0.9, 0.9, 1.0, 1.0)
         glEnable(GL_DEPTH_TEST)
 
