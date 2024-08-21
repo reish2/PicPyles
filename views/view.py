@@ -2,27 +2,51 @@ import PyQt5
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PyQt5.QtCore import QTimer, Qt, QEvent
-from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow
+from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
 
 from models.scene_objects import SceneObject
 
 
+def Error_Dialog(message):
+    error_dialog = QMessageBox()
+    error_dialog.setIcon(QMessageBox.Critical)
+    error_dialog.setWindowTitle("Error")
+    error_dialog.setText("An error occurred")
+    error_dialog.setInformativeText(message)
+    error_dialog.setStandardButtons(QMessageBox.Ok)
+    error_dialog.exec_()
+
+
+def Select_Folder_Dialog():
+    dialog = QFileDialog()
+    dialog.setFileMode(QFileDialog.Directory)
+    dialog.setOption(QFileDialog.ShowDirsOnly, True)
+
+    folder_path = dialog.getExistingDirectory(None, "Select Folder")
+
+    if folder_path:
+        return folder_path
+    else:
+        return None
+
+
 class MainWindow(QMainWindow):
-    def __init__(self, scene, load_new_scene_callback_fn):
+    def __init__(self, scene):
         super().__init__()
         self.setWindowTitle("PicPyles")
         self.resize(800, 600)
         self.move(100, 100)
-        self.opengl_widget = OpenGLWidget(scene, load_new_scene_callback_fn)
+        self.opengl_widget = OpenGLWidget(scene)
         self.setCentralWidget(self.opengl_widget)
 
 
 class OpenGLWidget(QOpenGLWidget):
-    def __init__(self, scene, load_new_scene_callback_fn):
+    signal_folder_selected = pyqtSignal(str)  # Define a signal
+
+    def __init__(self, scene):
         super().__init__()
         self.scene = scene
-        self.load_new_scene_callback_fn = load_new_scene_callback_fn
         self.done = False
 
         # mouse state tracking
@@ -90,12 +114,12 @@ class OpenGLWidget(QOpenGLWidget):
         #      * empty multi-select list => start new multiselect box
         # 3. on double click and clicked_object is folder => deconstruct scene and initialize new one with new path
         # Detect double-click
-        if event.type() == QEvent.MouseButtonDblClick:
+        if event.type() == QEvent.MouseButtonDblClick and self.clicked_object:
             if self.clicked_object:
                 # Double-click detected and an object was hit
                 if self.clicked_object.object_type == "folder":  # Assuming you have a FolderObject type
                     folder_name = self.clicked_object.text
-                    self.load_new_scene_callback_fn(folder_name)
+                    self.signal_folder_selected.emit(folder_name)  # Emit signal
                     return
 
         if self.clicked_object:

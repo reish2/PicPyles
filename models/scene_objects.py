@@ -39,8 +39,8 @@ class SceneObject:
             texture_id = glGenTextures(1)
             glBindTexture(GL_TEXTURE_2D, texture_id)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text_width, text_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
@@ -187,9 +187,9 @@ class Triangle(SceneObject):
 
 
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size, name=None, parent_dir=None,object_type="image"):
+    def __init__(self, image_path, position, size, name=None, parent_dir=None, object_type="image"):
         self.image_path = image_path
-        self.object_type = object_type # "image" or "folder"
+        self.object_type = object_type  # "image" or "folder"
         if parent_dir:
             self.image_path = Path(parent_dir) / image_path
         if not name:
@@ -201,10 +201,10 @@ class ImageObject(SceneObject):
         # dict keys must be kept consistant with __init__(**kwargs)
         if preserve_image_path:
             return {"image_path": self.image_path, "position": list(self.position), "size": list(self.size),
-                    "name": self.text, "object_type":self.object_type}
+                    "name": self.text, "object_type": self.object_type}
         else:
             return {"image_path": Path(self.image_path).name, "position": list(self.position), "size": list(self.size),
-                    "name": self.text, "object_type":self.object_type}
+                    "name": self.text, "object_type": self.object_type}
 
     def load_texture(self):
         if self.texture_id is not None:
@@ -216,7 +216,7 @@ class ImageObject(SceneObject):
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
             sx, sy = self.size
-            scale_factor = min(sx,sy) / (min(width, height))
+            scale_factor = min(sx, sy) / (min(width, height))
 
             self.size = np.array([width * scale_factor, height * scale_factor])
             self.vertices = self.create_vertices()
