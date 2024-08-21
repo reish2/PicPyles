@@ -16,7 +16,7 @@ class SceneManager:
         self.min_pos = np.array((0.0, 0.0, 0.0))
         self.max_pos = np.array((0.0, 0.0, 0.0))
         self.default_image_size = (2.0, 2.0 * 9.0 / 16.0)
-        self.default_image_spacing = tuple(1.075 * _ for _ in self.default_image_size)
+        self.default_image_spacing = tuple(1.125 * _ for _ in self.default_image_size)
 
         self.images = []  # list of geometry.ImageObject
         self.folders = [

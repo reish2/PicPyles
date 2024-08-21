@@ -16,12 +16,12 @@ class SceneObject:
         self.text = text
         self.font_texture = None
 
-    def create_text_texture(self, text, font_size=48):
+    def create_text_texture(self, text, font_size=80):
         if self.font_texture is not None:
             return self.font_texture
 
         try:
-            font = ImageFont.truetype("assets/liberation-sans/LiberationSans-Regular.ttf", font_size)
+            font = ImageFont.truetype("assets/liberation-sans/LiberationSans-Bold.ttf", font_size)
             # Use getbbox() to calculate the size of the text
             text_bbox = font.getbbox(text)
             text_width = text_bbox[2] + 4
@@ -41,8 +41,9 @@ class SceneObject:
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text_width, text_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glGenerateMipmap(GL_TEXTURE_2D)
 
             return texture_id, text_width, text_height
         except Exception as e:
@@ -91,7 +92,7 @@ class SceneObject:
         glColor3f(1.0, 1.0, 1.0)
 
         glPushMatrix()
-        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1 / 2 + 0.03), self.position[2])
+        glTranslatef(self.position[0], self.position[1] - self.size[1] * (1 / 2 + 0.05), self.position[2])
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0)
         glVertex3f(-text_width / 200.0, -text_height / 200.0, 0.0)
