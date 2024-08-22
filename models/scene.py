@@ -2,6 +2,8 @@ import queue
 import threading
 
 import numpy as np
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication
 
 from models.scene_objects import SceneObject
 
@@ -12,30 +14,49 @@ class Scene:
         self.lock = threading.Lock()
         self.update_queue = queue.Queue()
 
+        # Initialize the timer
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.run_process_updates)
+        self.update_timer.start(500)  # 500 milliseconds
+
+    def run_process_updates(self):
+        # Process updates when the timer fires
+        self.process_updates(max_iterations=10)
+
     def add_object(self, obj):
-        self.update_queue.put(('add', obj))
+        with self.lock:
+            if obj not in self.objects:
+                self.update_queue.put(('add', obj))
 
     def remove_object(self, obj):
-        self.update_queue.put(('remove', obj))
+        with self.lock:
+            if obj in self.objects:
+                self.update_queue.put(('remove', obj))
 
     def remove_all_objects(self):
-        for obj in self.objects:
-            self.update_queue.put(('remove', obj))
+        with self.lock:
+            for obj in self.objects:
+                self.update_queue.put(('remove', obj))
 
-    def process_updates(self):
+    def process_updates(self, max_iterations=10):
         updated = False
-        while True:
+        iterations = 0
+
+        while iterations < max_iterations:
             try:
-                action, obj = self.update_queue.get_nowait()
                 with self.lock:
+                    action, obj = self.update_queue.get_nowait()
                     if action == 'add':
                         self.objects.append(obj)
                     elif action == 'remove':
-                        self.objects.remove(obj)
-                self.update_queue.task_done()  # Indicate that the task is done
+                        if obj in self.objects:
+                            self.objects.remove(obj)
+                self.update_queue.task_done()
                 updated = True
+                iterations += 1
             except queue.Empty:
                 break
+
         return updated
 
     def query(self, cam_pos, click_pos_3d):
@@ -50,7 +71,7 @@ class Scene:
                 if self.ray_intersects_object(world_near, ray_direction, obj):
                     if not best_obj_candidate:
                         best_obj_candidate = obj
-                    elif obj.position[2]>best_obj_candidate.position[2]:
+                    elif obj.position[2] > best_obj_candidate.position[2]:
                         best_obj_candidate = obj
 
         return best_obj_candidate
