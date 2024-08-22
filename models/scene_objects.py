@@ -186,9 +186,9 @@ class Triangle(SceneObject):
             glVertex3f(*vertex)
         glEnd()
 
-
 class ImageObject(SceneObject):
-    def __init__(self, image_path, position, size, name=None, parent_dir=None, object_type="image"):
+    def __init__(self, image_path, position, size, name=None, parent_dir=None, object_type="image", use_thumbnail=True):
+        self.use_thumbnail = use_thumbnail
         self.image_path = image_path
         self.object_type = object_type  # "image" or "folder"
         if parent_dir:
@@ -197,6 +197,38 @@ class ImageObject(SceneObject):
             name = Path(image_path).name
         super().__init__(position, size, text=name)
         self.texture_id = None
+
+    def move_to(self,position):
+        if isinstance(position,np.ndarray):
+            if len(position) == 3:
+                self.position = position
+
+    def update_thumbnail(self):
+        img_path = Path(self.image_path)
+        self.thumbnail_folder = img_path.absolute().parent / ".ppyles" / "thumbnails"
+        self.thumbnail_path = self.thumbnail_folder / img_path.name
+        if not self.thumbnail_folder.exists():
+            self.thumbnail_folder.mkdir(parents=True)
+        if not self.thumbnail_path.exists():
+            self.create_thumbnail()
+
+    def create_thumbnail(self):
+        # Check if the image path exists
+        img_path = Path(self.image_path)
+        if not img_path.exists():
+            raise FileNotFoundError(f"Image file {self.image_path} not found.")
+
+        # Open the image using PIL
+        with Image.open(self.image_path) as img:
+            # Convert the image to RGB (if not already in that mode)
+            img = img.convert("RGB")
+
+            # Create the thumbnail
+            img.thumbnail((512,512))
+
+            # Save the thumbnail to the specified path
+            img.save(self.thumbnail_path, "JPEG")
+            print(f"Thumbnail saved to {self.thumbnail_path}")
 
     def to_dict(self, preserve_image_path=False):
         # dict keys must be kept consistant with __init__(**kwargs)
@@ -212,7 +244,11 @@ class ImageObject(SceneObject):
             return self.texture_id
 
         try:
-            image = Image.open(self.image_path)
+            self.update_thumbnail()
+            if self.use_thumbnail:
+                image = Image.open(self.thumbnail_path)
+            else:
+                image = Image.open(self.image_path)
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
             img_data = image.convert("RGBA").tobytes()
             width, height = image.size
@@ -291,3 +327,10 @@ class ImageObject(SceneObject):
         error = glGetError()
         if error != GL_NO_ERROR:
             print(f"OpenGL Error: {error}")
+
+class LargeImageObject(ImageObject):
+    def __init__(self, image_object):
+        size = (10.0, 10.0 * 9.0 / 16.0)
+        position = (0,0,0.1)
+        parent_dir = Path(image_object.image_path).parent
+        super().__init__(image_object.image_path, position, size, image_object.text, parent_dir, image_object.object_type, False)

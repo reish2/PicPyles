@@ -4,9 +4,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
 from PyQt5.QtGui import QSurfaceFormat
-from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog, QApplication
 
-from models.scene_objects import SceneObject
+from models.scene_objects import SceneObject, LargeImageObject, ImageObject
 
 
 def Error_Dialog(message):
@@ -44,6 +44,8 @@ class MainWindow(QMainWindow):
 
 class OpenGLWidget(QOpenGLWidget):
     signal_folder_selected = pyqtSignal(str)  # Define a signal
+    signal_enlarge_image = pyqtSignal(LargeImageObject)
+    signal_close_image = pyqtSignal(LargeImageObject)
 
     def __init__(self, scene):
         super().__init__()
@@ -96,13 +98,15 @@ class OpenGLWidget(QOpenGLWidget):
 
     def set_selected_bounding_boxes(self):
         print(f"set_selected_bounding_boxes for {len(self.selected_objects)}")
-        for obj in self.selected_objects:
-            obj.selected = True
+        with self.scene.lock:
+            for obj in self.selected_objects:
+                obj.selected = True
 
     def reset_all_bounding_boxes(self):
-        print(f"reset_all_bounding_boxes for {len(self.scene.objects)}")
-        for obj in self.scene.objects:
-            obj.selected = False
+        with self.scene.lock:
+            print(f"reset_all_bounding_boxes for {len(self.scene.objects)}")
+            for obj in self.scene.objects:
+                obj.selected = False
 
     def mousePressEvent(self, event):
         self.last_mouse_pos = event.pos()
@@ -128,6 +132,14 @@ class OpenGLWidget(QOpenGLWidget):
                 if self.clicked_object.object_type == "folder":  # Assuming you have a FolderObject type
                     folder_name = self.clicked_object.text
                     self.signal_folder_selected.emit(folder_name)  # Emit signal
+                    return
+                if self.clicked_object.object_type == "image" and not isinstance(self.clicked_object, LargeImageObject):
+                    LargeImage = LargeImageObject(self.clicked_object)
+                    LargeImage.move_to(np.array((-self.translation_x, -self.translation_y, 0.001)))
+                    self.signal_enlarge_image.emit(LargeImage)
+                    return
+                if isinstance(self.clicked_object, LargeImageObject):
+                    self.signal_close_image.emit(self.clicked_object)
                     return
 
         if self.clicked_object:
@@ -239,12 +251,14 @@ class OpenGLWidget(QOpenGLWidget):
 
     def paintGL(self):
         self.update_camera()
-        if self.scene.process_updates():  # Handle pending updates to the scene
-            self.update()  # Trigger a repaint if there were updates
+        # QApplication.processEvents()
+        # if self.scene.process_updates():  # Handle pending updates to the scene
+        #     self.update()  # Trigger a repaint if there were updates
         self.setup_geometry()
 
         # Draw the selection rectangle if applicable
         self.draw_selection_rectangle()
+
 
     def draw_selection_rectangle(self):
         if self.selection_start is None or self.selection_end is None:

@@ -2,13 +2,17 @@ import json
 from pathlib import Path
 
 import numpy as np
+from PyQt5.QtCore import pyqtSignal, QObject
 from numpy.ma.core import arange
 
 from models.scene_objects import ImageObject
 
 
-class SceneManager:
+class SceneManager(QObject):
+    signal_add_image = pyqtSignal(ImageObject)
+
     def __init__(self, path):
+        super().__init__()
         self.path = Path(path)
         self.ppyles_folder = self.path / '.ppyles'
         self.state_file = self.ppyles_folder / 'state.json'
@@ -27,12 +31,9 @@ class SceneManager:
             self.ppyles_folder.mkdir(parents=True)
             self.scan_directory()
         else:
-            # TODO
-            # * load state needs to check if images have been removed
-            # * update needs to check for new images and folders, then find a good place to put them
             self.load_state()
             self.scan_directory()  # scan for changes
-        self.redraw_scene = True
+
 
     def scan_directory(self):
         """Scan the directory for images and subdirectories."""
@@ -96,6 +97,12 @@ class SceneManager:
                 self.images.append(new_image_object)
 
         self.save_state()
+
+    def load_objects_into_scene(self):
+        for fld in self.folders:
+            self.signal_add_image.emit(fld)
+        for img in self.images:
+            self.signal_add_image.emit(img)
 
     def save_state(self):
         """Save the current state to the .ppyles folder."""
