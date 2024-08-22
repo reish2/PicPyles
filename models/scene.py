@@ -44,12 +44,16 @@ class Scene:
         world_near = cam_pos
 
         # Check for intersection with each object
+        best_obj_candidate = None
         for obj in self.objects:
             if isinstance(obj, SceneObject):
                 if self.ray_intersects_object(world_near, ray_direction, obj):
-                    return obj
+                    if not best_obj_candidate:
+                        best_obj_candidate = obj
+                    elif obj.position[2]>best_obj_candidate.position[2]:
+                        best_obj_candidate = obj
 
-        return None
+        return best_obj_candidate
 
     def ray_intersects_object(self, ray_origin, ray_direction, obj):
         object_plane_distance = -ray_origin[2]  # objects are placed at z=0
