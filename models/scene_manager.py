@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5.QtCore import pyqtSignal, QObject
 from numpy import arange
 
-from models.scene_objects import ImageObject
+from models.image_object import ImageObject
 
 
 class SceneManager(QObject):
