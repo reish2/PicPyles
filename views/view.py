@@ -4,9 +4,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
 from PyQt5.QtGui import QSurfaceFormat
-from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog, QApplication
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
 
-from models.scene_objects import SceneObject, LargeImageObject, ImageObject
+from models.scene_objects import SceneObject, LargeImageObject
 
 
 def Error_Dialog(message):
