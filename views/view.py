@@ -247,7 +247,8 @@ class OpenGLWidget(QOpenGLWidget):
     def setup_geometry(self):
         with self.scene.lock:
             for obj in self.scene.objects:
-                obj.render()
+                if obj.has_thumbnail:
+                    obj.render()
 
     def paintGL(self):
         self.update_camera()

@@ -23,6 +23,7 @@ class Controller:
 
         # Views
         self.view = MainWindow(self.model_scene)
+        self.model_scene.start_update_timer() # fix image load failure on first few images
 
         # Signals
         self.reconnect_view_signals()
@@ -31,10 +32,13 @@ class Controller:
         # local state
         self.running = True
         self.clear_scene = True
-        # self.background_thread = threading.Thread(target=self.modify_scene_thread, daemon=True)
-        # self.background_thread.start()
 
+        self.rescan_folder_and_update_scene()
+
+    def rescan_folder_and_update_scene(self):
+        self.model_scene_manager.scan_directory()
         self.model_scene_manager.load_objects_into_scene()
+        self.model_scene.sync_objects(self.model_scene_manager.list_all_objects())
 
     def reconnect_view_signals(self):
         self.view.opengl_widget.signal_folder_selected.connect(self.load_folder)
@@ -76,20 +80,6 @@ class Controller:
         self.reconnect_msm_signals()
         self.model_scene_manager.load_objects_into_scene()
 
-    def modify_scene_thread(self):
-        while self.running:
-            # if self.model_scene_manager.redraw_scene:
-            #     for folder_object in self.model_scene_manager.list_folders():
-            #         self.model_scene.add_object(folder_object)
-            #     for image_object in self.model_scene_manager.list_images():
-            #         self.model_scene.add_object(image_object)
-            #     self.model_scene_manager.redraw_scene = False
-            # if self.clear_scene:
-            #     self.model_scene.remove_all_objects()
-            #     self.clear_scene = False
-            time.sleep(0.1)
-            self.model_scene.update_queue.join()  # Wait for the object to be added
-        self.model_scene_manager.save_state()
 
     def run(self):
         self.view.show()

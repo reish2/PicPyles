@@ -149,3 +149,6 @@ class SceneManager(QObject):
     def list_folders(self):
         """Return the list of subdirectories."""
         return self.folders
+
+    def list_all_objects(self):
+        return self.images + self.folders

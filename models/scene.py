@@ -17,11 +17,26 @@ class Scene:
         # Initialize the timer
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.run_process_updates)
-        self.update_timer.start(500)  # 500 milliseconds
+
+    def start_update_timer(self, interval=100):
+        """Start the update timer with a specified interval in milliseconds."""
+        self.update_timer.start(interval)
+
+    def stop_update_timer(self):
+        """Stop the update timer."""
+        self.update_timer.stop()
+
+    def sync_objects(self,obj_list):
+        for obj in obj_list:
+            if obj not in self.objects:
+                self.add_object(obj)
+        for obj in self.objects:
+            if obj not in obj_list:
+                self.remove_object(obj)
 
     def run_process_updates(self):
         # Process updates when the timer fires
-        self.process_updates(max_iterations=10)
+        self.process_updates(max_iterations=50)
 
     def add_object(self, obj):
         with self.lock:
