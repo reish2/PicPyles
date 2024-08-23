@@ -1,16 +1,23 @@
 import queue
 import threading
-
+from typing import List, Optional, Tuple, Any
 import numpy as np
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication
-
 from models.scene_objects import SceneObject
 
 
 class Scene:
+    """
+    Manages the collection of objects in the scene and coordinates updates,
+    queries, and interactions with those objects.
+    """
+
     def __init__(self):
-        self.objects = []
+        """
+        Initialize the Scene object, setting up the object list, a thread lock,
+        an update queue, and a timer for processing updates.
+        """
+        self.objects: List[SceneObject] = []
         self.lock = threading.Lock()
         self.update_queue = queue.Queue()
 
@@ -18,15 +25,26 @@ class Scene:
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.run_process_updates)
 
-    def start_update_timer(self, interval=100):
-        """Start the update timer with a specified interval in milliseconds."""
+    def start_update_timer(self, interval: int = 100) -> None:
+        """
+        Start the update timer with a specified interval in milliseconds.
+
+        Args:
+            interval (int): The interval at which to process updates, in milliseconds. Defaults to 100 ms.
+        """
         self.update_timer.start(interval)
 
-    def stop_update_timer(self):
+    def stop_update_timer(self) -> None:
         """Stop the update timer."""
         self.update_timer.stop()
 
-    def sync_objects(self,obj_list):
+    def sync_objects(self, obj_list: List[SceneObject]) -> None:
+        """
+        Synchronize the objects in the scene with a given list, adding new objects and removing missing ones.
+
+        Args:
+            obj_list (List[SceneObject]): The list of objects to synchronize with the scene.
+        """
         for obj in obj_list:
             if obj not in self.objects:
                 self.add_object(obj)
@@ -34,26 +52,48 @@ class Scene:
             if obj not in obj_list:
                 self.remove_object(obj)
 
-    def run_process_updates(self):
-        # Process updates when the timer fires
+    def run_process_updates(self) -> None:
+        """Process updates when the timer fires, handling up to a specified maximum number of iterations."""
         self.process_updates(max_iterations=50)
 
-    def add_object(self, obj):
+    def add_object(self, obj: SceneObject) -> None:
+        """
+        Add an object to the scene.
+
+        Args:
+            obj (SceneObject): The object to add to the scene.
+        """
         with self.lock:
             if obj not in self.objects:
                 self.update_queue.put(('add', obj))
 
-    def remove_object(self, obj):
+    def remove_object(self, obj: SceneObject) -> None:
+        """
+        Remove an object from the scene.
+
+        Args:
+            obj (SceneObject): The object to remove from the scene.
+        """
         with self.lock:
             if obj in self.objects:
                 self.update_queue.put(('remove', obj))
 
-    def remove_all_objects(self):
+    def remove_all_objects(self) -> None:
+        """Remove all objects from the scene."""
         with self.lock:
             for obj in self.objects:
                 self.update_queue.put(('remove', obj))
 
-    def process_updates(self, max_iterations=10):
+    def process_updates(self, max_iterations: int = 10) -> bool:
+        """
+        Process pending updates to the scene, handling a specified maximum number of iterations.
+
+        Args:
+            max_iterations (int): The maximum number of updates to process. Defaults to 10.
+
+        Returns:
+            bool: True if updates were processed, False otherwise.
+        """
         updated = False
         iterations = 0
 
@@ -74,47 +114,82 @@ class Scene:
 
         return updated
 
-    def query(self, cam_pos, click_pos_3d):
+    def query(self, cam_pos: np.ndarray, click_pos_3d: np.ndarray) -> Optional[SceneObject]:
+        """
+        Query the scene to find the object that intersects with a ray originating from the camera.
+
+        Args:
+            cam_pos (np.ndarray): The camera's position in 3D space.
+            click_pos_3d (np.ndarray): The 3D position of the click in camera space.
+
+        Returns:
+            Optional[SceneObject]: The closest intersecting object, or None if no intersection occurs.
+        """
         # Calculate the ray direction
         ray_direction = click_pos_3d / np.linalg.norm(click_pos_3d)
         world_near = cam_pos
 
         # Check for intersection with each object
-        best_obj_candidate = None
+        best_obj_candidate: Optional[SceneObject] = None
         for obj in self.objects:
             if isinstance(obj, SceneObject):
                 if self.ray_intersects_object(world_near, ray_direction, obj):
-                    if not best_obj_candidate:
-                        best_obj_candidate = obj
-                    elif obj.position[2] > best_obj_candidate.position[2]:
+                    if not best_obj_candidate or obj.position[2] > best_obj_candidate.position[2]:
                         best_obj_candidate = obj
 
         return best_obj_candidate
 
-    def ray_intersects_object(self, ray_origin, ray_direction, obj):
+    def ray_intersects_object(self, ray_origin: np.ndarray, ray_direction: np.ndarray, obj: SceneObject) -> bool:
+        """
+        Determine if a ray intersects with a given object in the scene.
+
+        Args:
+            ray_origin (np.ndarray): The origin of the ray.
+            ray_direction (np.ndarray): The direction of the ray.
+            obj (SceneObject): The object to check for intersection.
+
+        Returns:
+            bool: True if the ray intersects the object, False otherwise.
+        """
         object_plane_distance = -ray_origin[2]  # objects are placed at z=0
         intersection_point = ray_direction * object_plane_distance / ray_direction[2] - ray_origin
+
         # Check if the intersection point is within the object's bounds
-        if (obj.position[0] - obj.size[0] / 2 <= intersection_point[0] <= obj.position[0] + obj.size[0] / 2 and
-                obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2):
-            return True
-        return False
+        return (obj.position[0] - obj.size[0] / 2 <= intersection_point[0] <= obj.position[0] + obj.size[0] / 2 and
+                obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2)
 
-    def inside_rectangle(self, obj, start, end):
-        if isinstance(obj.vertices, np.ndarray):
-            verts = obj.vertices
-        else:
-            verts = np.array([v[0] for v in obj.vertices])
-        minx = min(start[0], end[0])
-        maxx = max(start[0], end[0])
-        miny = min(start[1], end[1])
-        maxy = max(start[1], end[1])
-        if ((verts[:, 0] >= minx) & (verts[:, 0] <= maxx) &
-            (verts[:, 1] >= miny) & (verts[:, 1] <= maxy)).any():
-            return True
-        return False
 
-    def query_inside(self, cam_pos, click_start_3d, click_end_3d):
+    def inside_rectangle(self, obj: SceneObject, start: np.ndarray, end: np.ndarray) -> bool:
+        """
+        Check if an object is inside a specified rectangular region.
+
+        Args:
+            obj (SceneObject): The object to check.
+            start (np.ndarray): The starting corner of the rectangle.
+            end (np.ndarray): The opposite corner of the rectangle.
+
+        Returns:
+            bool: True if the object is inside the rectangle, False otherwise.
+        """
+        verts = obj.vertices if isinstance(obj.vertices, np.ndarray) else np.array([v[0] for v in obj.vertices])
+        minx, maxx = min(start[0], end[0]), max(start[0], end[0])
+        miny, maxy = min(start[1], end[1]), max(start[1], end[1])
+        return ((verts[:, 0] >= minx) & (verts[:, 0] <= maxx) &
+                (verts[:, 1] >= miny) & (verts[:, 1] <= maxy)).any()
+
+    def query_inside(self, cam_pos: np.ndarray, click_start_3d: np.ndarray, click_end_3d: np.ndarray) -> List[
+        SceneObject]:
+        """
+        Query the scene to find all objects inside a rectangular region defined by two click positions.
+
+        Args:
+            cam_pos (np.ndarray): The camera's position in 3D space.
+            click_start_3d (np.ndarray): The 3D position of the first corner of the rectangle.
+            click_end_3d (np.ndarray): The 3D position of the opposite corner of the rectangle.
+
+        Returns:
+            List[SceneObject]: A list of objects inside the rectangular region.
+        """
         # Calculate the ray direction
         start_ray_direction = click_start_3d / np.linalg.norm(click_start_3d)
         end_ray_direction = click_end_3d / np.linalg.norm(click_end_3d)
@@ -124,9 +199,4 @@ class Scene:
         end = end_ray_direction * object_plane_distance / end_ray_direction[2] - cam_pos
 
         # Check for intersection with each object
-        objs = []
-        for obj in self.objects:
-            if isinstance(obj, SceneObject):
-                if self.inside_rectangle(obj, start, end):
-                    objs.append(obj)
-        return objs
+        return [obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end)]
