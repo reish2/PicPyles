@@ -1,9 +1,10 @@
+import threading
 from pathlib import Path
 
 import numpy as np
 from OpenGL.GL import *
 from PIL import Image, ImageDraw, ImageFont
-
+import concurrent.futures
 
 class SceneObject:
     def __init__(self, position, size, color=None, text="Test"):
@@ -187,6 +188,9 @@ class Triangle(SceneObject):
         glEnd()
 
 class ImageObject(SceneObject):
+    # Initialize the thread pool
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
     def __init__(self, image_path, position, size, name=None, parent_dir=None, object_type="image", use_thumbnail=True):
         self.use_thumbnail = use_thumbnail
         self.image_path = image_path
@@ -198,19 +202,26 @@ class ImageObject(SceneObject):
         super().__init__(position, size, text=name)
         self.texture_id = None
 
+        self.has_thumbnail = False
+
+        self.lock = threading.Lock()
+        self.executor.submit(self.update_thumbnail)
+
     def move_to(self,position):
         if isinstance(position,np.ndarray):
             if len(position) == 3:
                 self.position = position
 
     def update_thumbnail(self):
-        img_path = Path(self.image_path)
-        self.thumbnail_folder = img_path.absolute().parent / ".ppyles" / "thumbnails"
-        self.thumbnail_path = self.thumbnail_folder / img_path.name
-        if not self.thumbnail_folder.exists():
-            self.thumbnail_folder.mkdir(parents=True)
-        if not self.thumbnail_path.exists():
-            self.create_thumbnail()
+        with self.lock:
+            img_path = Path(self.image_path)
+            self.thumbnail_folder = img_path.absolute().parent / ".ppyles" / "thumbnails"
+            self.thumbnail_path = self.thumbnail_folder / img_path.name
+            if not self.thumbnail_folder.exists():
+                self.thumbnail_folder.mkdir(parents=True)
+            if not self.thumbnail_path.exists():
+                self.create_thumbnail()
+            self.has_thumbnail = True
 
     def create_thumbnail(self):
         # Check if the image path exists
@@ -240,11 +251,13 @@ class ImageObject(SceneObject):
                     "name": self.text, "object_type": self.object_type}
 
     def load_texture(self):
+        if self.has_thumbnail is None:
+            return
+
         if self.texture_id is not None:
             return self.texture_id
 
         try:
-            self.update_thumbnail()
             if self.use_thumbnail:
                 image = Image.open(self.thumbnail_path)
             else:
@@ -297,6 +310,9 @@ class ImageObject(SceneObject):
         return vertices
 
     def render_object(self):
+        if self.has_thumbnail is None:
+            return
+
         if self.texture_id is None:
             self.load_texture()
 
