@@ -1,6 +1,5 @@
+import json
 import sys
-import threading
-import time
 from pathlib import Path
 
 from PyQt5.QtWidgets import QApplication
@@ -14,8 +13,12 @@ class Controller:
     def __init__(self, path=None):
         self.app = QApplication([])
 
+        # Load previous state if available
+        self.load_app_state()
+
         # validate inputs
-        self.path = self.validate_path(path)
+        if path:
+            self.path = self.validate_path(path)
 
         # Models
         self.model_scene = Scene()
@@ -23,7 +26,7 @@ class Controller:
 
         # Views
         self.view = MainWindow(self.model_scene)
-        self.model_scene.start_update_timer() # fix image load failure on first few images
+        self.model_scene.start_update_timer()  # fix image load failure on first few images
 
         # Signals
         self.reconnect_view_signals()
@@ -34,6 +37,45 @@ class Controller:
         self.clear_scene = True
 
         self.rescan_folder_and_update_scene()
+
+    def __del__(self):
+        """Ensure the state is saved when the Controller is deleted (on application close)."""
+        self.save_app_state()
+
+    def load_app_state(self):
+        """Load application state from ~/.picpyles/appsettings.json if it exists."""
+        settings_path = Path.home() / ".picpyles/appsettings.json"
+        if settings_path.exists():
+            try:
+                with open(settings_path, 'r') as f:
+                    state = json.load(f)
+                    self.path = Path(state.get('last_opened_path')).resolve().absolute()
+                    # Load any additional state variables here
+            except Exception as e:
+                print(f"Failed to load app state: {e}")
+
+    def save_app_state(self):
+        """Save application state to ~/.picpyles/appsettings.json."""
+        settings_dir = Path.home() / ".picpyles"
+        settings_path = settings_dir / "appsettings.json"
+
+        # Create the settings directory if it doesn't exist
+        if not settings_dir.exists():
+            settings_dir.mkdir(parents=True)
+
+        # Prepare the state data to save
+        state = {
+            "last_opened_path": str(Path(self.path).resolve().absolute()),
+            # Add any additional state variables you want to save here
+        }
+
+        # Save the state as a JSON file
+        try:
+            with open(settings_path, 'w') as f:
+                json.dump(state, f)
+            print(f"App state saved to {settings_path}")
+        except Exception as e:
+            print(f"Failed to save app state: {e}")
 
     def rescan_folder_and_update_scene(self):
         self.model_scene_manager.scan_directory()
@@ -79,7 +121,6 @@ class Controller:
             self.model_scene_manager = SceneManager(self.path)
         self.reconnect_msm_signals()
         self.model_scene_manager.load_objects_into_scene()
-
 
     def run(self):
         self.view.show()
