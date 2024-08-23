@@ -8,11 +8,7 @@ from OpenGL.GL import *
 from PIL import Image
 
 from models.scene_object import SceneObject
-
-Vec3 = np.ndarray
-
-# Type alias for a single vertex and texture coordinate pair
-VertexWithTexCoord = Tuple[np.ndarray, Tuple[float, float]]
+from models.types import *
 
 class ImageObject(SceneObject):
     """

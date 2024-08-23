@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Any
 import numpy as np
 from PyQt5.QtCore import QTimer
 from models.scene_object import SceneObject
-
+from models.types import *
 
 class Scene:
     """
@@ -114,13 +114,13 @@ class Scene:
 
         return updated
 
-    def query(self, cam_pos: np.ndarray, click_pos_3d: np.ndarray) -> Optional[SceneObject]:
+    def query(self, cam_pos: Vec3, click_pos_3d: Vec3) -> Optional[SceneObject]:
         """
         Query the scene to find the object that intersects with a ray originating from the camera.
 
         Args:
-            cam_pos (np.ndarray): The camera's position in 3D space.
-            click_pos_3d (np.ndarray): The 3D position of the click in camera space.
+            cam_pos (Vec3): The camera's position in 3D space.
+            click_pos_3d (Vec3): The 3D position of the click in camera space.
 
         Returns:
             Optional[SceneObject]: The closest intersecting object, or None if no intersection occurs.
@@ -139,13 +139,13 @@ class Scene:
 
         return best_obj_candidate
 
-    def ray_intersects_object(self, ray_origin: np.ndarray, ray_direction: np.ndarray, obj: SceneObject) -> bool:
+    def ray_intersects_object(self, ray_origin: Vec3, ray_direction: Vec3, obj: SceneObject) -> bool:
         """
         Determine if a ray intersects with a given object in the scene.
 
         Args:
-            ray_origin (np.ndarray): The origin of the ray.
-            ray_direction (np.ndarray): The direction of the ray.
+            ray_origin (Vec3): The origin of the ray.
+            ray_direction (Vec3): The direction of the ray.
             obj (SceneObject): The object to check for intersection.
 
         Returns:
@@ -159,14 +159,14 @@ class Scene:
                 obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2)
 
 
-    def inside_rectangle(self, obj: SceneObject, start: np.ndarray, end: np.ndarray) -> bool:
+    def inside_rectangle(self, obj: SceneObject, start: Vec3, end: Vec3) -> bool:
         """
         Check if an object is inside a specified rectangular region.
 
         Args:
             obj (SceneObject): The object to check.
-            start (np.ndarray): The starting corner of the rectangle.
-            end (np.ndarray): The opposite corner of the rectangle.
+            start (Vec3): The starting corner of the rectangle.
+            end (Vec3): The opposite corner of the rectangle.
 
         Returns:
             bool: True if the object is inside the rectangle, False otherwise.
@@ -177,15 +177,15 @@ class Scene:
         return ((verts[:, 0] >= minx) & (verts[:, 0] <= maxx) &
                 (verts[:, 1] >= miny) & (verts[:, 1] <= maxy)).any()
 
-    def query_inside(self, cam_pos: np.ndarray, click_start_3d: np.ndarray, click_end_3d: np.ndarray) -> List[
+    def query_inside(self, cam_pos: Vec3, click_start_3d: Vec3, click_end_3d: Vec3) -> List[
         SceneObject]:
         """
         Query the scene to find all objects inside a rectangular region defined by two click positions.
 
         Args:
-            cam_pos (np.ndarray): The camera's position in 3D space.
-            click_start_3d (np.ndarray): The 3D position of the first corner of the rectangle.
-            click_end_3d (np.ndarray): The 3D position of the opposite corner of the rectangle.
+            cam_pos (Vec3): The camera's position in 3D space.
+            click_start_3d (Vec3): The 3D position of the first corner of the rectangle.
+            click_end_3d (Vec3): The 3D position of the opposite corner of the rectangle.
 
         Returns:
             List[SceneObject]: A list of objects inside the rectangular region.

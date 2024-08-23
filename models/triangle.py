@@ -4,8 +4,7 @@ from typing import Tuple, Optional
 
 from models.scene_object import SceneObject
 
-Vec3 = np.ndarray
-
+from models.types import *
 
 class Triangle(SceneObject):
     """
