@@ -4,13 +4,18 @@ A Python-based application for viewing and organizing large collections of image
 
 ## Getting Started
 
-To get started with PicPyles, follow these steps:
+To get started with PicPyles, clone the repository, set up a virtual environment, install dependencies, and run the application:
 
-1. Clone the repository: `git clone https://github.com/reish2/PicPyles.git`
-2. Create a new virtual environment: `python -m venv picpyles-env`
-3. Activate the virtual environment: `source picpyles-env/bin/activate` (on Linux/Mac) or `picpyles-env\Scripts\activate` (on Windows)
-4. Install the required dependencies: `pip install -r requirements.txt`
-5. Run the application: `python main.py`
+```bash
+git clone https://github.com/reish2/PicPyles.git
+cd PicPyles
+python -m venv picpyles-env
+source picpyles-env/bin/activate  # On Linux/Mac
+# or
+picpyles-env\Scripts\activate  # On Windows
+pip install -r requirements.txt
+python main.py
+```
 
 ## Requirements
 
@@ -18,15 +23,18 @@ To get started with PicPyles, follow these steps:
 * PyQt5
 * PyOpenGL
 * Pillow
+* Numpy
 
 ## Project Structure
 
 The project is organized into the following directories:
 
-* `ui`: contains the GUI-related code
-* `models`: contains the data structures for the application
-* `utils`: contains miscellaneous utility functions
-* `requirements.txt`: lists the required dependencies
+- `views/`: GUI-related code.
+- `models/`: Data structures and logic.
+- `controllers/`: Handles interactions between models and views.
+- `assets/`: Icons and fonts.
+- `requirements.txt`: Lists dependencies.
+- `main.py`: Application entry point.
 
 ## Contributing
 
