@@ -34,6 +34,8 @@ class SceneManager(QObject):
             self.load_state()
             self.scan_directory()  # scan for changes
 
+    def __del__(self):
+        self.save_state()
 
     def scan_directory(self):
         """Scan the directory for images and subdirectories."""
