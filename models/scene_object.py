@@ -168,8 +168,15 @@ class SceneObject:
         Render the bounding box around the object if it is selected.
         """
         # Calculate the bounding box corners based on the object's vertices
-        min_corner = np.min(self.vertices, axis=0) if isinstance(self.vertices, np.ndarray) else [0, 0, 0]
-        max_corner = np.max(self.vertices, axis=0) if isinstance(self.vertices, np.ndarray) else [0, 0, 0]
+        min_corner = [0, 0, 0]
+        max_corner = [0, 0, 0]
+        if isinstance(self.vertices, np.ndarray):
+            min_corner = np.min(self.vertices, axis=0)
+            max_corner = np.max(self.vertices, axis=0)
+        else:
+            verts = [v[0] for v in self.vertices]
+            min_corner = np.min(verts, axis=0)
+            max_corner = np.max(verts, axis=0)
 
         glColor3f(1.0, 1.0, 1.0)  # White color for the bounding box
         glLineWidth(4.0)  # Thicker lines for visibility

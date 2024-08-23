@@ -199,4 +199,4 @@ class Scene:
         end = end_ray_direction * object_plane_distance / end_ray_direction[2] - cam_pos
 
         # Check for intersection with each object
-        return [obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end)]
+        return set(obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end))
