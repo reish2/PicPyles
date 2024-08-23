@@ -7,8 +7,9 @@ from models.image_object import ImageObject
 from models.large_image_object import LargeImageObject
 from models.scene import Scene
 from models.scene_manager import SceneManager
-from views.view import MainWindow, Error_Dialog, Select_Folder_Dialog
+from views.view import MainWindow
 
+from views.utils import *
 
 class Controller:
     """
@@ -129,10 +130,10 @@ class Controller:
             SystemExit: If no valid path is provided or selected.
         """
         if path is None or not path.exists():
-            path = Select_Folder_Dialog()
+            path = select_folder_dialog()
             print(path)
             if path is None:
-                Error_Dialog("No folder was selected for viewing. Closing app.")
+                error_dialog("No folder was selected for viewing. Closing app.")
                 sys.exit(1)
         return path
 
