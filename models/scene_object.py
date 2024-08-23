@@ -3,6 +3,7 @@ from OpenGL.GL import *
 from PIL import Image, ImageDraw, ImageFont
 from typing import Optional, Tuple
 
+from models.types import *
 
 class SceneObject:
     """
@@ -90,12 +91,12 @@ class SceneObject:
             [-half_size[0], half_size[1], 0.0]
         ]) + self.position
 
-    def update_position(self, dxyz: np.ndarray) -> None:
+    def update_position(self, dxyz: Vec3) -> None:
         """
         Update the position of the object by a given displacement.
 
         Args:
-            dxyz (np.ndarray): The displacement to apply to the object's position.
+            dxyz (Vec3): The displacement to apply to the object's position.
         """
         self.position += dxyz
         self.vertices = self.create_vertices()
