@@ -6,7 +6,8 @@ from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
 from PyQt5.QtGui import QSurfaceFormat
 from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
 
-from models.scene_objects import SceneObject, LargeImageObject
+from models.large_image_object import LargeImageObject
+from models.scene_object import SceneObject
 
 
 def Error_Dialog(message):

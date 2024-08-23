@@ -2,9 +2,11 @@ import json
 import sys
 from pathlib import Path
 from PyQt5.QtWidgets import QApplication
+
+from models.image_object import ImageObject
+from models.large_image_object import LargeImageObject
 from models.scene import Scene
 from models.scene_manager import SceneManager
-from models.scene_objects import ImageObject, LargeImageObject
 from views.view import MainWindow, Error_Dialog, Select_Folder_Dialog
 
 

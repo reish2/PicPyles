@@ -3,7 +3,7 @@ import threading
 from typing import List, Optional, Tuple, Any
 import numpy as np
 from PyQt5.QtCore import QTimer
-from models.scene_objects import SceneObject
+from models.scene_object import SceneObject
 
 
 class Scene:
