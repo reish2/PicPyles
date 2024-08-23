@@ -4,33 +4,10 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from PyQt5.QtCore import QTimer, Qt, QEvent, pyqtSignal
 from PyQt5.QtGui import QSurfaceFormat
-from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QOpenGLWidget, QMainWindow
 
 from models.large_image_object import LargeImageObject
 from models.scene_object import SceneObject
-
-
-def Error_Dialog(message):
-    error_dialog = QMessageBox()
-    error_dialog.setIcon(QMessageBox.Critical)
-    error_dialog.setWindowTitle("Error")
-    error_dialog.setText("An error occurred")
-    error_dialog.setInformativeText(message)
-    error_dialog.setStandardButtons(QMessageBox.Ok)
-    error_dialog.exec_()
-
-
-def Select_Folder_Dialog():
-    dialog = QFileDialog()
-    dialog.setFileMode(QFileDialog.Directory)
-    dialog.setOption(QFileDialog.ShowDirsOnly, True)
-
-    folder_path = dialog.getExistingDirectory(None, "Select Folder")
-
-    if folder_path:
-        return folder_path
-    else:
-        return None
 
 
 class MainWindow(QMainWindow):
