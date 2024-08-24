@@ -25,6 +25,13 @@ python main.py
 * Pillow
 * Numpy
 
+## Build installer
+
+```bash
+pip install pyinstaller
+pyinstaller PicPyles-build.spec
+```
+
 ## Project Structure
 
 The project is organized into the following directories:
