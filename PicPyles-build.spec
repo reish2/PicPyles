@@ -1,5 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+import os
+
+if sys.platform == "win32":
+    from PyInstaller.utils.win32.winutils import MSI
 
 a = Analysis(
     ['main.py'],
@@ -44,7 +49,7 @@ coll = COLLECT(
     name='PicPyles',
 )
 
-if os.name == 'nt':
+if sys.platform == "win32":
     msi = MSI(
         coll,
         name='PicPyles',
