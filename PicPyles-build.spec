@@ -4,7 +4,7 @@ import sys
 import os
 
 if sys.platform == "win32":
-    from PyInstaller.utils.win32.winutils import MSI
+    from PyInstaller.building.msi import MSI
 
 a = Analysis(
     ['main.py'],
