@@ -4,8 +4,8 @@ on:
   push:
     tags:
       - 'v*'  # Trigger on version tags, e.g., v1.0.0
-    branches:
-      - 'automated-build'
+#    branches:
+#      - 'automated-build'
 
 jobs:
   build:
@@ -62,8 +62,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: List files before download
-        run: ls -R ./
+#      - name: DEBUG - List files before download
+#        run: ls -R ./
 
       - name: Download Ubuntu artifact
         uses: actions/download-artifact@v4
@@ -77,8 +77,8 @@ jobs:
           name: PicPyles-windows-latest-${{ github.sha }}
           path: ./dist/windows
 
-      - name: List files after download & before release
-        run: ls -R ./
+#      - name: DEBUG - List files after download & before release
+#        run: ls -R ./
 
       - name: Create a Release
         uses: softprops/action-gh-release@v2
