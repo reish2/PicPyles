@@ -101,18 +101,24 @@ jobs:
         run: |
           mv ./dist/windows/PicPyles* ./PicPyles-Windows.zip
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+#      - name: Create Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+#        with:
+#          tag_name: ${{ github.ref }}
+#          release_name: Release ${{ github.ref }}
+#          body: |
+#            Later automated release notes here
+#          draft: false
+#          prerelease: false
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Later automated release notes here
-          draft: false
-          prerelease: false
+          files: |
+            Release.txt
+            LICENSE
       - name: Upload LINUX Release Asset
         uses: actions/upload-release-asset@v1
         env:
