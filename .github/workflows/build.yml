@@ -80,12 +80,19 @@ jobs:
 #      - name: DEBUG - List files after download & before release
 #        run: ls -R ./
 
+      - name: Rename Linux artifact for release
+        run: |
+          mv ./dist/ubuntu/PicPyles* ./dist/PicPyles-Linux.zip
+
+      - name: Rename Windows artifact for release
+        run: |
+          mv ./dist/windows/PicPyles* ./dist/PicPyles-Windows.zip
+
       - name: Create a Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'automated-build')
         with:
           files: |
-            ./dist/ubuntu/PicPyles*
-            ./dist/windows/PicPyles*
+            ./dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
