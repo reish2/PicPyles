@@ -50,7 +50,7 @@ jobs:
         options: /O+
 
     - name: Upload executable or installer
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: PicPyles-${{ matrix.os }}-${{ github.sha }}
         path: |
@@ -62,6 +62,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: List files before download
+        run: ls -R dist/
+
       - name: Download Ubuntu artifact
         uses: actions/download-artifact@v4
         with:
@@ -74,7 +77,7 @@ jobs:
           name: PicPyles-windows-latest-${{ github.sha }}
           path: ./dist/windows
 
-      - name: List files before upload
+      - name: List files after download & before release
         run: ls -R dist/
 
       - name: Create a Release
