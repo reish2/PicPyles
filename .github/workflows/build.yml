@@ -63,7 +63,7 @@ jobs:
 
     steps:
       - name: List files before download
-        run: ls -R dist/
+        run: ls -R ./
 
       - name: Download Ubuntu artifact
         uses: actions/download-artifact@v4
@@ -78,7 +78,7 @@ jobs:
           path: ./dist/windows
 
       - name: List files after download & before release
-        run: ls -R dist/
+        run: ls -R ./
 
       - name: Create a Release
         uses: softprops/action-gh-release@v2
