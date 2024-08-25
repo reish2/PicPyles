@@ -38,7 +38,7 @@ jobs:
 
     - name: Set up Inno Setup
       if: matrix.os == 'windows-latest'
-      uses: datalogics/setup-inno@v1.2.0
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
 
     - name: Build executable with PyInstaller on Windows
       if: matrix.os == 'windows-latest'
