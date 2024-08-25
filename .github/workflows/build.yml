@@ -63,14 +63,12 @@ jobs:
 
     steps:
       - name: Download Ubuntu artifact
-        if: steps.build.outputs.os == 'ubuntu-latest'
         uses: actions/download-artifact@v4
         with:
           name: PicPyles-ubuntu-latest-${{ github.sha }}
           path: ./dist/ubuntu
 
       - name: Download Windows artifact
-        if: steps.build.outputs.os == 'windows-latest'
         uses: actions/download-artifact@v4
         with:
           name: PicPyles-windows-latest-${{ github.sha }}
