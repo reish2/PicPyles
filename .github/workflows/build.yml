@@ -80,13 +80,13 @@ jobs:
 #      - name: DEBUG - List files after download & before release
 #        run: ls -R ./
 
-      - name: Rename Linux artifact for release
-        run: |
-          mv ./dist/ubuntu/PicPyles* ./PicPyles-Linux.zip
-
-      - name: Rename Windows artifact for release
-        run: |
-          mv ./dist/windows/PicPyles* ./PicPyles-Windows.zip
+#      - name: Rename Linux artifact for release
+#        run: |
+#          mv ./dist/ubuntu/PicPyles* ./PicPyles-Linux.zip
+#
+#      - name: Rename Windows artifact for release
+#        run: |
+#          mv ./dist/windows/PicPyles* ./PicPyles-Windows.zip
 
       - name: DEBUG - List files after download & before release
         run: ls -R ./
