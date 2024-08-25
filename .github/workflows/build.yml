@@ -4,8 +4,8 @@ on:
   push:
     tags:
       - 'v*'  # Trigger on version tags, e.g., v1.0.0
-    branches:
-      - 'automated-build'
+#    branches:
+#      - 'automated-build'
 
 jobs:
   build:
@@ -113,26 +113,33 @@ jobs:
 #            Later automated release notes here
 #          draft: false
 #          prerelease: false
-      - name: Release
-        uses: AButler/upload-release-assets@v3.0
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: "PicPyles-Windows.zip;PicPyles-Linux.zip"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-#      - name: Upload LINUX Release Asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-#          asset_path: ./PicPyles-Linux.zip
-#          asset_name: PicPyles-Linux.zip
-#          asset_content_type: application/zip
-#      - name: Upload WINDOWS Release Asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-#          asset_path: ./PicPyles-Windows.zip
-#          asset_name: PicPyles-Windows.zip
-#          asset_content_type: application/zip
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+      - name: Upload LINUX Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./PicPyles-Linux.zip
+          asset_name: PicPyles-Linux.zip
+          asset_content_type: application/zip
+      - name: Upload WINDOWS Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./PicPyles-Windows.zip
+          asset_name: PicPyles-Windows.zip
+          asset_content_type: application/zip
