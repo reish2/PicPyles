@@ -88,12 +88,33 @@ jobs:
         run: |
           mv ./dist/windows/PicPyles* ./PicPyles-Windows.zip
 
-      - name: Create a Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'automated-build')
-        with:
-          files: |
-            PicPyles-Linux.zip
-            PicPyles-Windows.zip
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload LINUX Release Asset
+        id: upload-release-asset
+        uses: sekwah41/upload-release-assets@v1.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./PicPyles-Linux.zip
+          asset_name: PicPyles-Linux.zip
+          asset_content_type: application/zip
+      - name: Upload WINDOWS Release Asset
+        id: upload-release-asset
+        uses: sekwah41/upload-release-assets@v1.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./PicPyles-Windows.zip
+          asset_name: PicPyles-Windows.zip
+          asset_content_type: application/zip
