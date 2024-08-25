@@ -43,6 +43,7 @@ jobs:
       shell: bash
 
     - name: Compile .ISS to .EXE Installer
+      if: matrix.os == 'windows-latest'
       uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
       with:
         path: PicPyles.iss
