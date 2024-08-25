@@ -36,21 +36,17 @@ jobs:
         pyinstaller PicPyles-build-linux.spec
       shell: bash
 
-    - name: Set up Inno Setup
-      if: matrix.os == 'windows-latest'
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-
     - name: Build executable with PyInstaller on Windows
       if: matrix.os == 'windows-latest'
       run: |
         pyinstaller PicPyles-build-windows.spec
       shell: bash
 
-    - name: Build Windows Installer
-      if: matrix.os == 'windows-latest'
-      run: |
-        ISCC PicPyles.iss
-      shell: cmd
+    - name: Compile .ISS to .EXE Installer
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: PicPyles.iss
+        options: /O+
 
     - name: Upload executable or installer
       uses: actions/upload-artifact@v3
