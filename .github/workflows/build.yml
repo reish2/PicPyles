@@ -115,10 +115,11 @@ jobs:
 #          prerelease: false
       - name: Release
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            Release.txt
-            LICENSE
+            PicPyles-Windows.zip
+            PicPyles-Linux.zip
       - name: Upload LINUX Release Asset
         uses: actions/upload-release-asset@v1
         env:
