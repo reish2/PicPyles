@@ -82,17 +82,18 @@ jobs:
 
       - name: Rename Linux artifact for release
         run: |
-          mv ./dist/ubuntu/PicPyles* ./dist/PicPyles-Linux.zip
+          mv ./dist/ubuntu/PicPyles* ./PicPyles-Linux.zip
 
       - name: Rename Windows artifact for release
         run: |
-          mv ./dist/windows/PicPyles* ./dist/PicPyles-Windows.zip
+          mv ./dist/windows/PicPyles* ./PicPyles-Windows.zip
 
       - name: Create a Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'automated-build')
         with:
           files: |
-            ./dist/*
+            PicPyles-Linux.zip
+            PicPyles-Windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
