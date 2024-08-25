@@ -32,8 +32,10 @@ class Controller:
         self.load_app_state()
 
         # Validate input path
-        if path:
+        if path and self.path:
             self.path = self.validate_path(path)
+        else:
+            self.path = self.validate_path(self.path)
 
         # Models
         self.model_scene = Scene()

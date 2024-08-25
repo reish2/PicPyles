@@ -29,7 +29,7 @@ python main.py
 
 ```bash
 pip install pyinstaller
-pyinstaller PicPyles-build.spec
+pyinstaller PicPyles-build-linux.spec
 ```
 
 ## Project Structure

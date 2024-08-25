@@ -30,17 +30,34 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
 
-    - name: Build executable with PyInstaller
+    - name: Build executable with PyInstaller on Ubuntu
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        pyinstaller PicPyles-build.spec
+        pyinstaller PicPyles-build-linux.spec
       shell: bash
 
-    - name: Upload executable
+    - name: Set up Inno Setup
+      if: matrix.os == 'windows-latest'
+      uses: datalogics/setup-inno@v1.2.0
+
+    - name: Build executable with PyInstaller on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller PicPyles-build-windows.spec
+      shell: bash
+
+    - name: Build Windows Installer
+      if: matrix.os == 'windows-latest'
+      run: |
+        ISCC PicPyles.iss
+      shell: cmd
+
+    - name: Upload executable or installer
       uses: actions/upload-artifact@v3
       with:
         name: PicPyles-${{ matrix.os }}-${{ github.sha }}
         path: |
-          dist/PicPyles*
+          ${{ matrix.os == 'windows-latest' && 'Output/PicPyles*' || 'dist/PicPyles*' }}
         retention-days: 5
 
   release:
@@ -49,12 +66,14 @@ jobs:
 
     steps:
       - name: Download Ubuntu artifact
+        if: steps.build.outputs.os == 'ubuntu-latest'
         uses: actions/download-artifact@v4
         with:
           name: PicPyles-ubuntu-latest-${{ github.sha }}
           path: ./dist/ubuntu
 
       - name: Download Windows artifact
+        if: steps.build.outputs.os == 'windows-latest'
         uses: actions/download-artifact@v4
         with:
           name: PicPyles-windows-latest-${{ github.sha }}
