@@ -114,14 +114,10 @@ jobs:
 #          draft: false
 #          prerelease: false
       - name: Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/heads/automated-build')
+        uses: AButler/upload-release-assets@v3.0
         with:
-          files: |
-            PicPyles-Windows.zip
-            PicPyles-Linux.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: "PicPyles-Windows.zip;PicPyles-Linux.zip"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 #      - name: Upload LINUX Release Asset
 #        uses: actions/upload-release-asset@v1
 #        env:
