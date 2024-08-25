@@ -74,6 +74,9 @@ jobs:
           name: PicPyles-windows-latest-${{ github.sha }}
           path: ./dist/windows
 
+      - name: List files before upload
+        run: ls -R dist/
+
       - name: Create a Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'automated-build')
