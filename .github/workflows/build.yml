@@ -99,8 +99,7 @@ jobs:
           draft: false
           prerelease: false
       - name: Upload LINUX Release Asset
-        id: upload-release-asset-lin
-        uses: sekwah41/upload-release-assets@v1.1.1
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -109,8 +108,7 @@ jobs:
           asset_name: PicPyles-Linux.zip
           asset_content_type: application/zip
       - name: Upload WINDOWS Release Asset
-        id: upload-release-asset-win
-        uses: sekwah41/upload-release-assets@v1.1.1
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
