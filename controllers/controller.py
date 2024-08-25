@@ -17,7 +17,7 @@ class Controller:
     and coordinates interactions between the models and views.
     """
 
-    def __init__(self, path: Path = None):
+    def __init__(self, assets_path: Path, path: Path = None):
         """
         Initialize the Controller, load the application state, and set up the main components.
 
@@ -26,16 +26,20 @@ class Controller:
         """
         self.app = QApplication([])
 
+        self.assets_path = assets_path
+
         # Load previous state if available
         self.load_app_state()
 
         # Validate input path
-        if path:
+        if path and self.path:
             self.path = self.validate_path(path)
+        else:
+            self.path = self.validate_path(self.path)
 
         # Models
         self.model_scene = Scene()
-        self.model_scene_manager = SceneManager(self.path)
+        self.model_scene_manager = SceneManager(self.path, self.assets_path)
 
         # Views
         self.view = MainWindow(self.model_scene)
@@ -177,11 +181,11 @@ class Controller:
         self.model_scene.remove_all_objects()
         try:
             self.path = new_abs_path
-            self.model_scene_manager = SceneManager(self.path)
+            self.model_scene_manager = SceneManager(self.path, self.assets_path)
         except Exception as e:
             print(f"Loading folder {new_abs_path} failed with exception {e}")
             self.path = self.model_scene_manager.path
-            self.model_scene_manager = SceneManager(self.path)
+            self.model_scene_manager = SceneManager(self.path, self.assets_path)
         self.reconnect_msm_signals()
         self.model_scene_manager.load_objects_into_scene()
 

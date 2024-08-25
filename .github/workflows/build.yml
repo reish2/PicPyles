@@ -1,0 +1,91 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags, e.g., v1.0.0
+#    branches:
+#      - 'automated-build'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.12']  # Specify your Python version
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+
+    - name: Build executable with PyInstaller on Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        pyinstaller PicPyles-build-linux.spec
+      shell: bash
+
+    - name: Build executable with PyInstaller on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller PicPyles-build-windows.spec
+      shell: bash
+
+    - name: Compile .ISS to .EXE Installer
+      if: matrix.os == 'windows-latest'
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: PicPyles.iss
+        options: /O+
+
+    - name: Upload executable or installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: PicPyles-${{ matrix.os }}-${{ github.sha }}
+        path: |
+          ${{ matrix.os == 'windows-latest' && 'Output/PicPyles*' || 'dist/PicPyles*' }}
+        retention-days: 5
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+#      - name: DEBUG - List files before download
+#        run: ls -R ./
+
+      - name: Download Ubuntu artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PicPyles-ubuntu-latest-${{ github.sha }}
+          path: ./dist/ubuntu
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PicPyles-windows-latest-${{ github.sha }}
+          path: ./dist/windows
+
+#      - name: DEBUG - List files after download & before release
+#        run: ls -R ./
+
+      - name: Create a Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'automated-build')
+        with:
+          files: |
+            ./dist/ubuntu/PicPyles*
+            ./dist/windows/PicPyles*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

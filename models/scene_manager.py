@@ -17,7 +17,7 @@ class SceneManager(QObject):
 
     signal_add_image = pyqtSignal(ImageObject)
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, asset_path: Path):
         """
         Initialize the SceneManager, load the scene state, and scan the directory.
 
@@ -26,6 +26,7 @@ class SceneManager(QObject):
         """
         super().__init__()
         self.path = Path(path)
+        self.asset_path = Path(asset_path)
         self.ppyles_folder = self.path / '.ppyles'
         self.state_file = self.ppyles_folder / 'state.json'
 
@@ -36,7 +37,7 @@ class SceneManager(QObject):
 
         self.images: List[ImageObject] = []
         self.folders: List[ImageObject] = [
-            ImageObject("assets/parent_folder.jpg", np.array((0.0, 0.0, 0.0)), self.default_image_size, "..",
+            ImageObject(self.asset_path/"assets/parent_folder.jpg", np.array((0.0, 0.0, 0.0)), self.default_image_size, "..",
                         object_type="folder")
         ]
 
@@ -46,6 +47,11 @@ class SceneManager(QObject):
         else:
             self.load_state()
             self.scan_directory()  # scan for changes
+
+        # fix for packaged assets
+        for fobj in self.folders:
+            fobj.image_path = self.asset_path / "assets" / fobj.image_path.name
+        self.save_state()
 
     def __del__(self):
         """Ensure the state is saved when the SceneManager is deleted."""
@@ -102,7 +108,7 @@ class SceneManager(QObject):
                 w, h = self.default_image_spacing
                 new_pos = np.array((u_[k] * w, -v_[k] * h, 0.0)) + new_grid_offset
                 new_folder_object = ImageObject(
-                    "assets/folder2.jpg", new_pos, self.default_image_size, new_folder_name, object_type="folder"
+                    self.asset_path/"assets/folder2.jpg", new_pos, self.default_image_size, new_folder_name, object_type="folder"
                 )
                 self.folders.append(new_folder_object)
 
