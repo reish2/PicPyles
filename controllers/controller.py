@@ -42,8 +42,9 @@ class Controller:
         self.model_scene_manager = SceneManager(self.path, self.assets_path)
 
         # Views
-        self.view = MainWindow(self.model_scene)
+        self.view = MainWindow(self.model_scene,self.assets_path)
         self.model_scene.start_update_timer()  # Fix image load failure on first few images
+        self.view.set_current_path(self.path)
 
         # Signals
         self.reconnect_view_signals()
@@ -188,6 +189,7 @@ class Controller:
             self.model_scene_manager = SceneManager(self.path, self.assets_path)
         self.reconnect_msm_signals()
         self.model_scene_manager.load_objects_into_scene()
+        self.view.set_current_path(self.path)
 
     def run(self) -> None:
         """

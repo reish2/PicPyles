@@ -1,18 +1,23 @@
+from pathlib import Path
 from typing import Optional, Union, Tuple
 
 import PyQt5
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PyQt5.QtCore import QPoint, QEvent, Qt
+from PyQt5.QtCore import QPoint, QEvent
 from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtGui import QSurfaceFormat, QWheelEvent
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QAction
 from PyQt5.QtWidgets import QOpenGLWidget
+from PyQt5.QtWidgets import QVBoxLayout, QLabel, QDialog, QPushButton
 
 from models.large_image_object import LargeImageObject
 from models.scene_object import SceneObject
+from views.utils import select_folder_dialog
 
 
 class MainWindow(QMainWindow):
@@ -20,7 +25,7 @@ class MainWindow(QMainWindow):
     Main window for the PicPyles application, containing the OpenGL widget.
     """
 
-    def __init__(self, scene: SceneObject) -> None:
+    def __init__(self, scene: SceneObject, assets_path: Path) -> None:
         """
         Initialize the MainWindow with a given scene.
 
@@ -32,9 +37,107 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
         self.move(100, 100)
 
+        self.assets_path = assets_path
+
         # Create and set the OpenGL widget as the central widget
         self.opengl_widget = OpenGLWidget(scene)
         self.setCentralWidget(self.opengl_widget)
+
+        # Create the menu bar
+        self.create_menu_bar()
+
+    def update_title(self) -> None:
+        """
+        Update the window title to include the current path.
+        """
+        self.setWindowTitle(f"PicPyles - {self.current_path}")
+
+    def set_current_path(self, new_path: str) -> None:
+        """
+        Set a new current path and update the title bar.
+
+        Args:
+            new_path (str): The new path to set.
+        """
+        self.current_path = new_path
+        self.update_title()
+
+    def create_menu_bar(self) -> None:
+        """
+        Create the menu bar with File, Edit, and Help menus.
+        """
+        menu_bar = self.menuBar()
+
+        # Create the File menu
+        file_menu = menu_bar.addMenu("File")
+
+        # Add actions to the File menu
+        open_action = QAction("Open", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_file)
+        file_menu.addAction(open_action)
+
+        file_menu.addSeparator()  # Add a separator line
+
+        exit_action = QAction("Exit", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        # Create the Help menu
+        help_menu = menu_bar.addMenu("Help")
+
+        # Add actions to the Help menu
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.show_about_dialog)
+        help_menu.addAction(about_action)
+
+    def open_file(self) -> None:
+        """
+        Open a file (stub for now, to be implemented).
+        """
+        folder_name = select_folder_dialog()
+        self.opengl_widget.signal_folder_selected.emit(folder_name)
+
+    def show_about_dialog(self) -> None:
+        """
+        Show an About dialog with information about the application, including an image and descriptive text.
+        """
+        about_dialog = QDialog(self)
+        about_dialog.setWindowTitle("About PicPyles")
+
+        # Create a layout for the dialog
+        layout = QVBoxLayout()
+
+        # Add an image
+        image_label = QLabel()
+        pixmap = QPixmap(str(self.assets_path/"assets/about.jpg"))  # Replace with your image path
+        pixmap = pixmap.scaled(650, 650, Qt.KeepAspectRatio)  # Scale the image to fit
+        image_label.setPixmap(pixmap)
+        image_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(image_label)
+
+        # Add some descriptive text
+        text_label = QLabel()
+        text_label.setText(
+            "<h2>PicPyles</h2>"
+            "<p>Organize images into thematic piles.</p>"
+            "<p>If you like my work and want more, zap my nutsack!</p>"
+            "<p>Developed by EthernalMesh</p>"
+        )
+        text_label.setWordWrap(True)
+        text_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(text_label)
+
+        # Add an "OK" button to close the dialog
+        ok_button = QPushButton("OK")
+        ok_button.clicked.connect(about_dialog.accept)
+        layout.addWidget(ok_button)
+        layout.setAlignment(ok_button, Qt.AlignCenter)
+
+        # Set the layout for the dialog
+        about_dialog.setLayout(layout)
+        about_dialog.exec_()
 
 
 class OpenGLWidget(QOpenGLWidget):
