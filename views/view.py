@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Optional, Union, Tuple
 
@@ -15,6 +16,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction
 from PyQt5.QtWidgets import QOpenGLWidget
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QDialog, QPushButton
 
+from models.connector_line import ConnectorLine
 from models.large_image_object import LargeImageObject
 from models.scene_object import SceneObject
 from views.utils import select_folder_dialog
@@ -83,6 +85,16 @@ class MainWindow(QMainWindow):
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
+
+        # Create the functions menu
+        functions_menu = menu_bar.addMenu("Functions")
+        # Add actions to the File menu
+        tsp_action = QAction("Compute image sequence", self)
+        tsp_action.triggered.connect(self.opengl_widget.compute_optimal_image_sequence)
+        functions_menu.addAction(tsp_action)
+        tsp_visibility_toggle_action = QAction("Toggle sequence visibility", self)
+        tsp_visibility_toggle_action.triggered.connect(self.opengl_widget.toggle_image_sequence_connector_line_visibility)
+        functions_menu.addAction(tsp_visibility_toggle_action)
 
         # Create the Help menu
         help_menu = menu_bar.addMenu("Help")
@@ -186,6 +198,29 @@ class OpenGLWidget(QOpenGLWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(16)  # Approximately 60 frames per second
+
+    def compute_optimal_image_sequence(self) -> None:
+        """
+        Compute the optimal image sequence and add a connector line object to the scene.
+        """
+        self.scene.remove_connector_line_object()
+        pos = self.scene.get_object_positions()
+        con_line = ConnectorLine(pos)
+        self.scene.add_connector_line_object(con_line)
+
+    def update_image_sequence_connector_line(self) -> None:
+        """
+        Update the connector line object in the scene with the current object positions.
+        """
+        pos = self.scene.get_object_positions()
+        self.scene.update_connector_line_positions(pos)
+
+    def toggle_image_sequence_connector_line_visibility(self) -> None:
+        """
+        Toggle the visibility of the connector line object in the scene.
+        """
+        self.scene.toggle_connector_line_visibility()
+
 
     def get_opengl_format(self) -> QSurfaceFormat:
         """
@@ -440,6 +475,7 @@ class OpenGLWidget(QOpenGLWidget):
         self.update_camera()
         self.setup_geometry()
         self.draw_selection_rectangle()
+        self.update_image_sequence_connector_line()
 
     def draw_selection_rectangle(self) -> None:
         """

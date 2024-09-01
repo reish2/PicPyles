@@ -3,6 +3,9 @@ import threading
 from typing import List, Optional, Tuple, Any
 import numpy as np
 from PyQt5.QtCore import QTimer
+
+from models.connector_line import ConnectorLine
+from models.image_object import ImageObject
 from models.scene_object import SceneObject
 from models.types import *
 
@@ -20,6 +23,8 @@ class Scene:
         self.objects: List[SceneObject] = []
         self.lock = threading.Lock()
         self.update_queue = queue.Queue()
+
+        self.connector_line = None
 
         # Initialize the timer
         self.update_timer = QTimer()
@@ -55,6 +60,42 @@ class Scene:
     def run_process_updates(self) -> None:
         """Process updates when the timer fires, handling up to a specified maximum number of iterations."""
         self.process_updates(max_iterations=50)
+
+    def add_connector_line_object(self, obj: ConnectorLine) -> None:
+        """
+        Add a connector line object to the scene.
+
+        Args:
+            obj (ConnectorLine): The connector line object to be added.
+        """
+        self.connector_line = obj
+        self.add_object(self.connector_line)
+
+    def remove_connector_line_object(self) -> None:
+        """
+        Remove the connector line object from the scene, if it exists.
+        """
+        if self.connector_line:
+            self.remove_object(self.connector_line)
+            self.connector_line = None
+
+    def update_connector_line_positions(self, positions: np.ndarray) -> None:
+        """
+        Update the positions of the connector line.
+
+        Args:
+            positions (np.ndarray): A list of new positions for the connector line.
+        """
+        if self.connector_line:
+            self.connector_line.update_positions(positions)
+
+
+    def toggle_connector_line_visibility(self) -> None:
+        """
+        Toggle the visibility of the connector line.
+        """
+        if self.connector_line:
+            self.connector_line.toggle_visibility()
 
     def add_object(self, obj: SceneObject) -> None:
         """
@@ -297,3 +338,13 @@ class Scene:
 
         # Check for intersection with each object
         return set(obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end))
+
+
+    def get_object_positions(self) -> np.ndarray:
+        """
+        Extracts the center coordinates from the objects in the scene.
+
+        Returns:
+            np.ndarray: An array of shape (n, 2) where n is the number of objects.
+        """
+        return np.array([obj.position for obj in self.objects if isinstance(obj,ImageObject) and obj.object_type=="image"])
