@@ -158,10 +158,9 @@ class Scene:
         return (obj.position[0] - obj.size[0] / 2 <= intersection_point[0] <= obj.position[0] + obj.size[0] / 2 and
                 obj.position[1] - obj.size[1] / 2 <= intersection_point[1] <= obj.position[1] + obj.size[1] / 2)
 
-
     def inside_rectangle(self, obj: SceneObject, start: Vec3, end: Vec3) -> bool:
         """
-        Check if an object is inside a specified rectangular region.
+        Check if an object is inside or overlaps with a specified rectangular region.
 
         Args:
             obj (SceneObject): The object to check.
@@ -169,13 +168,96 @@ class Scene:
             end (Vec3): The opposite corner of the rectangle.
 
         Returns:
-            bool: True if the object is inside the rectangle, False otherwise.
+            bool: True if the object is inside or overlaps with the rectangle, False otherwise.
         """
+        # Calculate the object's AABB
         verts = obj.vertices if isinstance(obj.vertices, np.ndarray) else np.array([v[0] for v in obj.vertices])
-        minx, maxx = min(start[0], end[0]), max(start[0], end[0])
-        miny, maxy = min(start[1], end[1]), max(start[1], end[1])
-        return ((verts[:, 0] >= minx) & (verts[:, 0] <= maxx) &
-                (verts[:, 1] >= miny) & (verts[:, 1] <= maxy)).any()
+        obj_minx, obj_maxx = np.min(verts[:, 0]), np.max(verts[:, 0])
+        obj_miny, obj_maxy = np.min(verts[:, 1]), np.max(verts[:, 1])
+
+        # Calculate the rectangle's bounds
+        rect_minx, rect_maxx = min(start[0], end[0]), max(start[0], end[0])
+        rect_miny, rect_maxy = min(start[1], end[1]), max(start[1], end[1])
+
+        # Check for AABB overlap (bounding box intersection)
+        overlap_x = obj_maxx >= rect_minx and obj_minx <= rect_maxx
+        overlap_y = obj_maxy >= rect_miny and obj_miny <= rect_maxy
+
+        if overlap_x and overlap_y:
+            return True
+
+        # Optionally, check for edge intersection (this is more expensive but accurate)
+        if self.edges_intersect(verts, start, end):
+            return True
+
+        # Finally, is start and end entirely contained inside the object
+        if  (obj_minx < rect_minx < obj_maxx and obj_miny < rect_miny < obj_maxy) and (
+                obj_minx < rect_maxx < obj_maxx and obj_miny < rect_maxy < obj_maxy):
+           return True
+
+        return False
+
+    def edges_intersect(self, verts: np.ndarray, start: Vec3, end: Vec3) -> bool:
+        """
+        Check if any edge of the object intersects with the rectangle.
+
+        Args:
+            verts (np.ndarray): The vertices of the object.
+            start (Vec3): The starting corner of the rectangle.
+            end (Vec3): The opposite corner of the rectangle.
+
+        Returns:
+            bool: True if any edge intersects, False otherwise.
+        """
+        rect_edges = [
+            (start, (end[0], start[1])),
+            ((end[0], start[1]), end),
+            (end, (start[0], end[1])),
+            ((start[0], end[1]), start)
+        ]
+
+        # Loop over each edge of the object and the rectangle
+        for i in range(len(verts)):
+            obj_edge_start = verts[i]
+            obj_edge_end = verts[(i + 1) % len(verts)]
+            for rect_edge_start, rect_edge_end in rect_edges:
+                if self.do_edges_intersect(obj_edge_start, obj_edge_end, rect_edge_start, rect_edge_end):
+                    return True
+
+        return False
+
+    def do_edges_intersect(self, p1, q1, p2, q2) -> bool:
+        """
+        Helper function to check if two line segments (p1q1 and p2q2) intersect.
+
+        Args:
+            p1, q1: Start and end points of the first line segment.
+            p2, q2: Start and end points of the second line segment.
+
+        Returns:
+            bool: True if the segments intersect, False otherwise.
+        """
+
+        def orientation(p, q, r):
+            val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+            if val == 0:
+                return 0  # Collinear
+            elif val > 0:
+                return 1  # Clockwise
+            else:
+                return 2  # Counterclockwise
+
+        o1 = orientation(p1, q1, p2)
+        o2 = orientation(p1, q1, q2)
+        o3 = orientation(p2, q2, p1)
+        o4 = orientation(p2, q2, q1)
+
+        # General case
+        if o1 != o2 and o3 != o4:
+            return True
+
+        # Special cases (collinear points)
+        return False
 
     def query_inside(self, cam_pos: Vec3, click_start_3d: Vec3, click_end_3d: Vec3) -> List[
         SceneObject]:
@@ -197,6 +279,21 @@ class Scene:
 
         start = start_ray_direction * object_plane_distance / start_ray_direction[2] - cam_pos
         end = end_ray_direction * object_plane_distance / end_ray_direction[2] - cam_pos
+
+        # Check for intersection with each object
+        return self.query_inside_rectangle(start,end)
+
+    def query_inside_rectangle(self, start: Vec3, end: Vec3) -> List[SceneObject]:
+        """
+        Query the scene to find all objects inside a rectangular region defined by two click positions.
+
+        Args:
+            start (Vec3): The starting corner of the rectangle.
+            end (Vec3): The opposite corner of the rectangle.
+
+        Returns:
+            List[SceneObject]: A list of objects inside the rectangular region.
+        """
 
         # Check for intersection with each object
         return set(obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end))

@@ -159,7 +159,7 @@ class OpenGLWidget(QOpenGLWidget):
         super().__init__()
         self.setFormat(self.get_opengl_format())  # Set the format with MSAA (Multi-Sample Anti-Aliasing)
 
-        self.scene = scene
+        self.scene: SceneObject = scene
         self.done = False
 
         # Mouse state tracking
@@ -218,6 +218,23 @@ class OpenGLWidget(QOpenGLWidget):
         print(f"reset_selected_bounding_boxes for {len(self.selected_objects)}")
         for obj in self.selected_objects:
             obj.selected = False
+            self.drop_object(obj)
+
+    def drop_object(self, obj):
+        # get current position
+        new_position = obj.get_position()
+        # find overlapping objects and place ontop of them
+        top_left, bottom_right = obj.get_bounding_box()
+        objects = self.scene.query_inside_rectangle(top_left, bottom_right) #top left to bottom right of object
+        heights = [_.position[2] for _ in objects if obj is not _]
+        # update position
+        new_position[2] = np.max(heights)+1e-3 if heights else 0.0
+        obj.set_position(new_position)
+
+    def lift_object(self, obj):
+        new_position = obj.get_position()
+        new_position[2] = 0.2
+        obj.set_position(new_position)
 
     def set_selected_bounding_boxes(self) -> None:
         """
@@ -227,6 +244,7 @@ class OpenGLWidget(QOpenGLWidget):
         with self.scene.lock:
             for obj in self.selected_objects:
                 obj.selected = True
+                self.lift_object(obj)
 
     def reset_all_bounding_boxes(self) -> None:
         """
@@ -236,6 +254,7 @@ class OpenGLWidget(QOpenGLWidget):
             print(f"reset_all_bounding_boxes for {len(self.scene.objects)}")
             for obj in self.scene.objects:
                 obj.selected = False
+                self.drop_object(obj)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
@@ -266,7 +285,7 @@ class OpenGLWidget(QOpenGLWidget):
                 return
 
         # Handle single clicks and multi-selection logic
-        if self.clicked_object:
+        if self.clicked_object and self.current_button == Qt.LeftButton:
             print(f"Object clicked: {self.clicked_object}")
             if not self.selected_objects:
                 # If multi-select is empty, add the clicked object

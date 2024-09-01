@@ -101,6 +101,25 @@ class SceneObject:
         self.position += dxyz
         self.vertices = self.create_vertices()
 
+    def set_position(self, position: Vec3) -> None:
+        """
+        Update the position of the object by a given displacement.
+
+        Args:
+            position (Vec3): The position to set the object's position to.
+        """
+        self.position = position
+        self.vertices = self.create_vertices()
+
+    def get_position(self) -> Vec3:
+        """
+        Get the position of the object.
+
+        Returns:
+            position (Vec3): the object's position.
+        """
+        return self.position.copy()
+
     def render(self) -> None:
         """
         Render the object, including its bounding box if selected and text if specified.
@@ -163,20 +182,13 @@ class SceneObject:
             glVertex3f(*vertex)
         glEnd()
 
+
     def render_bounding_box(self) -> None:
         """
         Render the bounding box around the object if it is selected.
         """
         # Calculate the bounding box corners based on the object's vertices
-        min_corner = [0, 0, 0]
-        max_corner = [0, 0, 0]
-        if isinstance(self.vertices, np.ndarray):
-            min_corner = np.min(self.vertices, axis=0)
-            max_corner = np.max(self.vertices, axis=0)
-        else:
-            verts = [v[0] for v in self.vertices]
-            min_corner = np.min(verts, axis=0)
-            max_corner = np.max(verts, axis=0)
+        max_corner, min_corner = self.get_bounding_box()
 
         glColor3f(1.0, 1.0, 1.0)  # White color for the bounding box
         glLineWidth(4.0)  # Thicker lines for visibility
@@ -207,3 +219,15 @@ class SceneObject:
                        min_corner[1] if i < 2 else max_corner[1],
                        max_corner[2])
         glEnd()
+
+    def get_bounding_box(self):
+        min_corner = [0, 0, 0]
+        max_corner = [0, 0, 0]
+        if isinstance(self.vertices, np.ndarray):
+            min_corner = np.min(self.vertices, axis=0)
+            max_corner = np.max(self.vertices, axis=0)
+        else:
+            verts = [v[0] for v in self.vertices]
+            min_corner = np.min(verts, axis=0)
+            max_corner = np.max(verts, axis=0)
+        return max_corner, min_corner
