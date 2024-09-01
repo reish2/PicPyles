@@ -224,17 +224,22 @@ class OpenGLWidget(QOpenGLWidget):
         # get current position
         new_position = obj.get_position()
         # find overlapping objects and place ontop of them
-        top_left, bottom_right = obj.get_bounding_box()
-        objects = self.scene.query_inside_rectangle(top_left, bottom_right) #top left to bottom right of object
-        heights = [_.position[2] for _ in objects if obj is not _]
-        # update position
-        new_position[2] = np.max(heights)+1e-3 if heights else 0.0
+        new_position[2] = new_height = self.get_stack_placement_height(obj)
         obj.set_position(new_position)
 
+    def get_stack_placement_height(self, obj):
+        top_left, bottom_right = obj.get_bounding_box()
+        objects = self.scene.query_inside_rectangle(top_left, bottom_right)  # top left to bottom right of object
+        heights = [_.position[2] for _ in objects if obj is not _]
+        # update position
+        new_height = np.max(heights) + 1e-3 if heights else 0.0
+        return new_height
+
+
     def lift_object(self, obj):
-        new_position = obj.get_position()
-        new_position[2] = 0.2
-        obj.set_position(new_position)
+            new_position = obj.get_position()
+            new_position[2] = self.get_stack_placement_height(obj)
+            obj.set_position(new_position)
 
     def set_selected_bounding_boxes(self) -> None:
         """
@@ -277,7 +282,8 @@ class OpenGLWidget(QOpenGLWidget):
                 return
             if self.clicked_object.object_type == "image" and not isinstance(self.clicked_object, LargeImageObject):
                 large_image = LargeImageObject(self.clicked_object)
-                large_image.move_to(np.array([-self.translation_x, -self.translation_y, 0.001]))
+                new_height = self.get_stack_placement_height(large_image)
+                large_image.move_to(np.array([-self.translation_x, -self.translation_y, new_height]))
                 self.signal_enlarge_image.emit(large_image)
                 return
             if isinstance(self.clicked_object, LargeImageObject):
