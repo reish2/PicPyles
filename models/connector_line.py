@@ -107,8 +107,8 @@ def tsp_nearest_neighbor(points: np.ndarray, quadtree: pyqtree.Index) -> List[in
 
     while unvisited:
         # Define a slightly larger bounding box to find close neighbors
-        bbox = (points[current][0] - 1, points[current][1] - 1,
-                points[current][0] + 1, points[current][1] + 1)
+        bbox = (points[current][0] - 2, points[current][1] - 2,
+                points[current][0] + 2, points[current][1] + 2)
 
         # Find all neighbors within this bounding box
         neighbors = quadtree.intersect(bbox)
@@ -141,7 +141,7 @@ class ConnectorLine(SceneObject):
         """
         super().__init__(position=(0.0, 0.0, 0.0), size=(0.0, 0.0, 0.0), color=color)
         self.has_thumbnail = True # Hack to ignore the thumbnail check
-        self.positions = positions
+        self.positions = positions.copy()
         self.order = self.solve_tsp()
         self.visible = True  # By default, the connector line is visible
 
@@ -150,11 +150,11 @@ class ConnectorLine(SceneObject):
         self.visible = not self.visible
 
     def update_positions(self, positions):
-        self.positions = positions
+        self.positions = positions.copy()
 
     def render_object(self) -> None:
         """Render the connector line if it's visible."""
-        if not self.visible:
+        if not self.visible or np.max(self.order) > len(self.positions):
             return
 
         glColor3f(*self.color)  # Use the color specified in the initialization
@@ -194,6 +194,6 @@ class ConnectorLine(SceneObject):
         boundary = np.concatenate((np.min(points[:,:2],axis=0),np.max(points[:,:2],axis=0)))
         quadtree = build_quadtree(points, boundary)
         order = tsp_nearest_neighbor(points, quadtree)
-        order = two_opt(points, order)
+        # order = two_opt(points, order)
 
         return order
