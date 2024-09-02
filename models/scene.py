@@ -1,5 +1,6 @@
 import queue
 import threading
+import time
 from typing import List, Optional, Tuple, Any
 import numpy as np
 from PyQt5.QtCore import QTimer
@@ -227,14 +228,14 @@ class Scene:
         if overlap_x and overlap_y:
             return True
 
-        # Optionally, check for edge intersection (this is more expensive but accurate)
-        if self.edges_intersect(verts, start, end):
-            return True
-
         # Finally, is start and end entirely contained inside the object
         if  (obj_minx < rect_minx < obj_maxx and obj_miny < rect_miny < obj_maxy) and (
                 obj_minx < rect_maxx < obj_maxx and obj_miny < rect_maxy < obj_maxy):
-           return True
+            return True
+
+        # Optionally, check for edge intersection (this is more expensive but accurate)
+        if self.edges_intersect(verts, start, end):
+            return True
 
         return False
 
@@ -335,9 +336,23 @@ class Scene:
         Returns:
             List[SceneObject]: A list of objects inside the rectangular region.
         """
+        # do fast candidate check using center position check on slightly larger rectangle
+        # tstart = time.time()
+        centers = np.vstack(list(obj.position for obj in self.objects))
+        # print(f"Centers took {time.time() - tstart}s")
+
+        rect_minx, rect_maxx = min(start[0], end[0])-2, max(start[0], end[0])+2 # magic numbers!!
+        rect_miny, rect_maxy = min(start[1], end[1])-2, max(start[1], end[1])+2 # magic numbers!!
+
+        x_overlapp = (rect_minx <= centers[:, 0]) & (centers[:, 0] <= rect_maxx)
+        y_overlapp = (rect_miny <= centers[:, 1]) & (centers[:, 1] <= rect_maxy)
+        idx = np.where(x_overlapp & y_overlapp)[0]
+        candidates = set(self.objects[_] for _ in idx) if len(idx)>0 else []
 
         # Check for intersection with each object
-        return set(obj for obj in self.objects if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end))
+        res = list(obj for obj in candidates if isinstance(obj, SceneObject) and self.inside_rectangle(obj, start, end))
+        # print(f"Select took {time.time() - tstart}s and found {len(res)} objs")
+        return res
 
 
     def get_object_positions(self) -> np.ndarray:

@@ -259,7 +259,7 @@ class OpenGLWidget(QOpenGLWidget):
         # get current position
         new_position = obj.get_position()
         # find overlapping objects and place ontop of them
-        new_position[2] = new_height = self.get_stack_placement_height(obj)
+        new_position[2] = self.get_stack_placement_height(obj)
         obj.set_position(new_position)
 
     def get_stack_placement_height(self, obj):
