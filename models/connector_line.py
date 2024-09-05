@@ -101,7 +101,11 @@ def tsp_nearest_neighbor(points: np.ndarray, quadtree: pyqtree.Index) -> List[in
     """
     num_points = len(points)
     unvisited = set(range(num_points))
-    current = 0
+
+    top_left = np.array((np.min(points[:,0]),np.max(points[:,1]),np.min(points[:,2])))
+    distances = np.linalg.norm(points - top_left,axis=1)
+
+    current = np.argmin(distances)
     order = [current]
     unvisited.remove(current)
 
