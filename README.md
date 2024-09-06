@@ -1,9 +1,10 @@
 # PicPyles
 
-# <img src="assets/icon.png" width="32" height="32"> PicPyles
+
 
 PicPyles is a simple, personal tool for organizing your local photo collections. It lets you sort your images into piles, just like spreading photos out on a table. Whether you're grouping memories or curating a slideshow, PicPyles helps you arrange and sequence your pictures in a way that feels natural, all within your own folders—no cloud, no fuss, just your photos, your way.
 
+## Step 1 - Organize your pictures into piles
 ![process1.png](assets/process1.png)
 ![AutomaticSequencing.jpg](assets/AutomaticSequencing.jpg)
 
