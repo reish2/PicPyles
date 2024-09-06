@@ -1,12 +1,27 @@
-# PicPyles
-
-
+# <img src="assets/icon.png" width="32" height="32"> PicPyles
 
 PicPyles is a simple, personal tool for organizing your local photo collections. It lets you sort your images into piles, just like spreading photos out on a table. Whether you're grouping memories or curating a slideshow, PicPyles helps you arrange and sequence your pictures in a way that feels natural, all within your own folders—no cloud, no fuss, just your photos, your way.
 
-## Step 1 - Organize your pictures into piles
+## Step 1 - organize your pictures into piles
 ![process1.png](assets/process1.png)
-![AutomaticSequencing.jpg](assets/AutomaticSequencing.jpg)
+PicPyles will always remember the way you sorted your pictures.
+
+## Step 2 - enlarge a pciture by double-clicking
+![process2.png](assets/process2.png)
+
+## Step 3 - enjoy the slideshow
+![process3.png](assets/process3.png)
+
+Remember: You can recompute the slideshow sequence from the `Functions > Recompute image sequence` menu when you change your piles.
+
+## Step 4 - if you value PicPyles
+![about.jpg](assets/about.jpg)
+
+and I will get back to working on new features!
+
+You don't know how? Find out!
+* [strike.me](https://strike.me/) thorugh goole or apple pay. [Further reading.](https://strike.me/learn/what-is-a-lightning-invoice/)
+* [Do it the interesting way!](https://learn.robosats.com/docs/quick-start/)
 
 ## 🛠️ Installation & Setup
 
