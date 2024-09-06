@@ -7,6 +7,7 @@ from PyQt5.QtCore import QTimer
 
 from models.connector_line import ConnectorLine
 from models.image_object import ImageObject
+from models.large_image_object import LargeImageObject
 from models.scene_object import SceneObject
 from models.types import *
 
@@ -362,4 +363,8 @@ class Scene:
         Returns:
             np.ndarray: An array of shape (n, 2) where n is the number of objects.
         """
-        return np.array([obj.position for obj in self.objects if isinstance(obj,ImageObject) and obj.object_type=="image"])
+        return np.array([obj.position for obj in self.objects if isinstance(obj,ImageObject) and obj.object_type=="image" and not isinstance(obj,LargeImageObject)])
+
+    def get_image_object_by_index(self, index: int) -> Optional[ImageObject]:
+        objects = [obj for obj in self.objects if isinstance(obj,ImageObject) and obj.object_type=="image" and not isinstance(obj,LargeImageObject)]
+        return objects[index]

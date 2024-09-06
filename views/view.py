@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, List
 
 import PyQt5
 import numpy as np
@@ -9,7 +9,7 @@ from OpenGL.GLU import *
 from PyQt5.QtCore import QPoint, QEvent
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QMouseEvent, QKeyEvent
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtGui import QSurfaceFormat, QWheelEvent
 from PyQt5.QtWidgets import QMainWindow, QAction
@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import QOpenGLWidget
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QDialog, QPushButton
 
 from models.connector_line import ConnectorLine
+from models.image_object import ImageObject
 from models.large_image_object import LargeImageObject
 from models.scene_object import SceneObject
 from views.utils import select_folder_dialog
@@ -89,7 +90,7 @@ class MainWindow(QMainWindow):
         # Create the functions menu
         functions_menu = menu_bar.addMenu("Functions")
         # Add actions to the File menu
-        tsp_action = QAction("Compute image sequence", self)
+        tsp_action = QAction("Recompute image sequence", self)
         tsp_action.triggered.connect(self.opengl_widget.compute_optimal_image_sequence)
         functions_menu.addAction(tsp_action)
         tsp_visibility_toggle_action = QAction("Toggle sequence visibility", self)
@@ -169,6 +170,7 @@ class OpenGLWidget(QOpenGLWidget):
             scene (SceneObject): The scene to render within the widget.
         """
         super().__init__()
+        self.setFocusPolicy(Qt.StrongFocus)
         self.setFormat(self.get_opengl_format())  # Set the format with MSAA (Multi-Sample Anti-Aliasing)
 
         self.scene: SceneObject = scene
@@ -183,6 +185,11 @@ class OpenGLWidget(QOpenGLWidget):
         self.selection_end: Optional[Tuple[int, int]] = None  # End point of the selection rectangle
         self.clicked_object: Optional[SceneObject] = None
         self.selected_objects: list[SceneObject] = []
+
+        # iamge sequence viewing state containers
+        self.large_image: Optional[List[LargeImageObject,ImageObject]] = None
+        self.object_positions: Optional[np.ndarray] = None
+        self.con_line: Optional[ConnectorLine] = None
 
         # Camera settings
         self.translation_x: float = 0.0
@@ -204,9 +211,9 @@ class OpenGLWidget(QOpenGLWidget):
         Compute the optimal image sequence and add a connector line object to the scene.
         """
         self.scene.remove_connector_line_object()
-        pos = self.scene.get_object_positions()
-        con_line = ConnectorLine(pos)
-        self.scene.add_connector_line_object(con_line)
+        self.object_positions = self.scene.get_object_positions()
+        self.con_line = ConnectorLine(self.object_positions)
+        self.scene.add_connector_line_object(self.con_line)
 
     def update_image_sequence_connector_line(self) -> None:
         """
@@ -316,13 +323,14 @@ class OpenGLWidget(QOpenGLWidget):
                 self.signal_folder_selected.emit(folder_name)
                 return
             if self.clicked_object.object_type == "image" and not isinstance(self.clicked_object, LargeImageObject):
-                large_image = LargeImageObject(self.clicked_object)
-                new_height = self.get_stack_placement_height(large_image)
-                large_image.move_to(np.array([-self.translation_x, -self.translation_y, new_height]))
-                self.signal_enlarge_image.emit(large_image)
+                self.large_image = [LargeImageObject(self.clicked_object), self.clicked_object]
+                new_height = self.get_stack_placement_height(self.large_image[0])+0.05
+                self.large_image[0].move_to(np.array([-self.translation_x, -self.translation_y, new_height]))
+                self.signal_enlarge_image.emit(self.large_image[0])
                 return
             if isinstance(self.clicked_object, LargeImageObject):
                 self.signal_close_image.emit(self.clicked_object)
+                self.large_image = None
                 return
 
         # Handle single clicks and multi-selection logic
@@ -345,6 +353,56 @@ class OpenGLWidget(QOpenGLWidget):
             if event.button() == Qt.LeftButton:
                 self.selection_start = event.pos()
                 self.selection_end = event.pos()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """
+        Handle key press events to navigate through the slideshow.
+
+        Args:
+            event: The key press event.
+        """
+        if not self.large_image:
+            # no image open, this feature makes no sense
+            return
+
+        if not self.con_line:
+            #compute sequence real quick
+            self.compute_optimal_image_sequence()
+            self.con_line.set_invisible()
+
+        if self.large_image and self.con_line:
+            if event.key() == Qt.Key_Right:
+                self.next_large_image()
+            elif event.key() == Qt.Key_Left:
+                self.previous_large_image()
+        else:
+            print(f"Unable to progress to next image. No sequence defined.")
+
+    def next_large_image(self):
+        # get next object index
+        order_idx = self.con_line.get_order_index(self.large_image[1].position)
+        object_idx = self.con_line.get_next_object_index(order_idx)
+
+        self.update_large_image(object_idx)
+
+    def previous_large_image(self):
+        order_idx = self.con_line.get_order_index(self.large_image[1].position)
+        object_idx = self.con_line.get_prev_object_index(order_idx)
+
+        self.update_large_image(object_idx)
+
+    def update_large_image(self, object_index):
+        # get placement from last large image object for new one
+        new_large_image_object_position = self.large_image[0].position
+
+        # close last large image object
+        self.signal_close_image.emit(self.large_image[0])
+
+        # construct next large image object
+        next_image_object = self.scene.get_image_object_by_index(object_index)
+        self.large_image = [LargeImageObject(next_image_object), next_image_object]
+        self.large_image[0].move_to(new_large_image_object_position)
+        self.signal_enlarge_image.emit(self.large_image[0])
 
     def get_clicked_object(self, click_point: Union[QPoint, Tuple[int, int]]) -> Optional[SceneObject]:
         """

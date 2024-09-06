@@ -149,9 +149,33 @@ class ConnectorLine(SceneObject):
         self.order = self.solve_tsp()
         self.visible = True  # By default, the connector line is visible
 
+    def get_order_index(self, position: np.ndarray):
+        try:
+            pos_idx = np.argmin(np.linalg.norm(self.positions - position, axis=1))
+            oidx =  np.argwhere(self.order == pos_idx).squeeze()
+            return oidx
+        except Exception as e:
+            print(f"Get sequence index failed: {e}")
+            return None
+
+    def get_next_object_index(self, object_index: int):
+        if self.order:
+            return self.order[(object_index+2) % len(self.order)] # Bug? I have no idea why i need +2 and not +1. but it works
+        else:
+            return None
+
+    def get_prev_object_index(self, object_index: int):
+        if self.order:
+            return self.order[(object_index - 1) % len(self.order)]
+        else:
+            return None
+
     def toggle_visibility(self) -> None:
         """Toggle the visibility of the connector line."""
         self.visible = not self.visible
+
+    def set_invisible(self):
+        self.visible = False
 
     def update_positions(self, positions):
         self.positions = positions.copy()
