@@ -241,7 +241,7 @@ class OpenGLWidget(QOpenGLWidget):
             event (QWheelEvent): The mouse wheel event.
         """
         factor = max(abs(2 * (self.translation_z - self.tz_min) / (self.tz_max - self.tz_min)), 0.05)
-        self.translation_z += event.angleDelta().y() * 0.02 * factor
+        self.translation_z += event.angleDelta().y() * 0.05 * factor
         self.translation_z = self.tz_min if self.translation_z >= self.tz_min else self.translation_z
         self.translation_z = self.tz_max if self.translation_z <= self.tz_max else self.translation_z
         self.update()

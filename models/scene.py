@@ -341,8 +341,8 @@ class Scene:
         centers = np.vstack(list(obj.position for obj in self.objects))
         # print(f"Centers took {time.time() - tstart}s")
 
-        rect_minx, rect_maxx = min(start[0], end[0])-2, max(start[0], end[0])+2 # magic numbers!!
-        rect_miny, rect_maxy = min(start[1], end[1])-2, max(start[1], end[1])+2 # magic numbers!!
+        rect_minx, rect_maxx = min(start[0], end[0])-1, max(start[0], end[0])+1 # magic numbers!!
+        rect_miny, rect_maxy = min(start[1], end[1])-1, max(start[1], end[1])+1 # magic numbers!!
 
         x_overlapp = (rect_minx <= centers[:, 0]) & (centers[:, 0] <= rect_maxx)
         y_overlapp = (rect_miny <= centers[:, 1]) & (centers[:, 1] <= rect_maxy)
