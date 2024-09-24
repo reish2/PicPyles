@@ -8,6 +8,7 @@ PicPyles will always remember the way you sorted your pictures.
 
 ## Step 2 - enlarge a pciture by double-clicking
 ![process2.png](assets/process2.png)
+Close it again by double clicking.
 
 ## Step 3 - enjoy the slideshow
 ![process3.png](assets/process3.png)
@@ -20,7 +21,7 @@ Remember: You can recompute the slideshow sequence from the `Functions > Recompu
 and I will get back to working on new features!
 
 You don't know how? Find out!
-* [strike.me](https://strike.me/) thorugh goole or apple pay. [Further reading.](https://strike.me/learn/what-is-a-lightning-invoice/)
+* [strike.me](https://strike.me/) thorugh google or apple pay. [Further reading.](https://strike.me/learn/what-is-a-lightning-invoice/)
 * [Do it the interesting way!](https://learn.robosats.com/docs/quick-start/)
 
 ## 🛠️ Installation & Setup
