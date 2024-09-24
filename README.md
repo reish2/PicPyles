@@ -8,6 +8,7 @@ PicPyles will always remember the way you sorted your pictures.
 
 ## Step 2 - enlarge a pciture by double-clicking
 ![process2.png](assets/process2.png)
+
 Close it again by double clicking.
 
 ## Step 3 - enjoy the slideshow
